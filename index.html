@@ -23,7 +23,7 @@
       <a href="#location">오시는길</a>
       <a href="#faq">FAQ</a>
     </nav>
-    <a href="#contact" class="btn btn-nav">전화 예약</a>
+    <a href="#reservation" class="btn btn-nav">온라인 예약</a>
     <button class="hamburger" id="hamburger" aria-label="메뉴 열기">
       <span></span><span></span><span></span>
     </button>
@@ -80,7 +80,7 @@
     <h1>우리 아이가<br>편안하게 웃는 병원</h1>
     <p class="hero-sub">진료비는 투명하게, 진료는 정성스럽게.<br>몽글동물병원이 함께합니다.</p>
     <div class="hero-btns">
-      <a href="#contact" class="btn btn-primary">전화 예약하기</a>
+      <a href="#reservation" class="btn btn-primary">온라인 예약하기</a>
       <a href="#fees" class="btn btn-ghost">진료비 확인하기</a>
     </div>
   </div>
@@ -317,11 +317,86 @@
   </div>
 </section>
 
+<!-- ===================== 온라인 예약 ===================== -->
+<section class="section reservation" id="reservation">
+  <div class="container reveal">
+    <p class="tag">ONLINE RESERVATION</p>
+    <h2>온라인으로 미리 예약하세요</h2>
+    <p class="lead">
+      아래 정보를 입력해 주시면 예약 요청 메일이 병원으로 전송됩니다.
+      확인 후 입력해주신 연락처로 다시 연락드립니다.
+    </p>
+
+    <form class="reservation-form" id="reservationForm">
+      <div class="form-row">
+        <label for="ownerName">보호자 성명 <span class="req">*</span></label>
+        <input type="text" id="ownerName" name="ownerName" placeholder="예: 홍길동" required>
+      </div>
+
+      <div class="form-row">
+        <label for="ownerPhone">연락처 <span class="req">*</span></label>
+        <input type="tel" id="ownerPhone" name="ownerPhone" placeholder="예: 010-1234-5678" required>
+      </div>
+
+      <div class="form-row form-row-split">
+        <div>
+          <label for="petName">반려동물 이름</label>
+          <input type="text" id="petName" name="petName" placeholder="예: 코코">
+        </div>
+        <div>
+          <label for="petType">반려동물 종류</label>
+          <select id="petType" name="petType">
+            <option value="강아지">강아지</option>
+            <option value="고양이">고양이</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row form-row-split">
+        <div>
+          <label for="visitDate">희망 날짜 <span class="req">*</span></label>
+          <input type="date" id="visitDate" name="visitDate" required>
+        </div>
+        <div>
+          <label for="visitTime">희망 시간대</label>
+          <select id="visitTime" name="visitTime">
+            <option value="오전(09:30~13:00)">오전 (09:30~13:00)</option>
+            <option value="오후(14:00~19:30)">오후 (14:00~19:30)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="visitReason">진료 항목</label>
+        <select id="visitReason" name="visitReason">
+          <option value="일반진료">일반진료</option>
+          <option value="예방접종">예방접종</option>
+          <option value="건강검진">건강검진</option>
+          <option value="수술상담">수술상담</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="visitMemo">요청사항</label>
+        <textarea id="visitMemo" name="visitMemo" rows="3" placeholder="아이의 증상이나 궁금한 점을 자유롭게 남겨주세요."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg reservation-submit">예약 요청 보내기</button>
+      <p class="form-success" id="formSuccess">예약 요청이 접수되었습니다! 이메일 앱이 열리면 그대로 전송해 주세요. 병원에서 확인 후 연락드립니다.</p>
+    </form>
+  </div>
+</section>
+
 <section class="cta" id="contact">
   <div class="container reveal">
     <h2>지금 바로 예약해보세요</h2>
-    <p>전화 한 통으로 우리 아이의 편안한 진료를 예약할 수 있습니다.</p>
-    <a href="tel:02-1234-5678" class="btn btn-primary btn-lg">📞 02-1234-5678 전화하기</a>
+    <p>전화 한 통, 혹은 온라인 예약폼으로 우리 아이의 편안한 진료를 예약할 수 있습니다.</p>
+    <div class="hero-btns cta-btns">
+      <a href="tel:02-1234-5678" class="btn btn-primary btn-lg">📞 02-1234-5678 전화하기</a>
+      <a href="#reservation" class="btn btn-ghost btn-lg">온라인 예약폼 작성하기</a>
+    </div>
   </div>
 </section>
 
@@ -343,6 +418,25 @@
   <p class="copyright">© 2026 Mongl Animal Hospital. All rights reserved.</p>
 </footer>
 
+<!-- ===================== 챗봇 위젯 ===================== -->
+<div class="chatbot-widget">
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <span>🐾 몽글이 챗봇</span>
+      <button id="chatClose" aria-label="챗봇 닫기">×</button>
+    </div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-quick" id="chatQuick"></div>
+    <form class="chat-input-row" id="chatForm">
+      <input type="text" id="chatInput" placeholder="질문을 입력해 주세요" autocomplete="off">
+      <button type="submit" aria-label="전송">➤</button>
+    </form>
+  </div>
+  <button class="chat-toggle" id="chatToggle" aria-label="챗봇 열기">💬</button>
+</div>
+
 <script src="js/main.js"></script>
+<script src="js/reservation.js"></script>
+<script src="js/chatbot.js"></script>
 </body>
 </html>
