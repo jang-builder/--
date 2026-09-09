@@ -1,0 +1,106 @@
+<!--
+  [아임웹 사용법]
+  1. "온라인예약" 섹션을 만든 자리에 "HTML 위젯"을 추가하고 이 코드를 그대로 붙여넣으세요.
+  2. 아래 스크립트의 HOSPITAL_EMAIL 값을 실제 병원 이메일로 꼭 바꿔주세요.
+  3. 위젯 높이는 700px 이상으로 설정해주세요.
+-->
+<style>
+.mgw-resv{font-family:'Gowun Dodum',sans-serif;padding:20px;}
+.mgw-resv *{box-sizing:border-box;margin:0;padding:0;text-decoration:none;list-style:none;font-style:normal;border:0;}
+.mgw-resv-form{max-width:640px;margin:0 auto;background:#fff;border-radius:20px;padding:36px;
+  box-shadow:0 10px 30px rgba(46,50,56,.08);}
+.mgw-resv-row{margin-bottom:18px;}
+.mgw-resv-split{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.mgw-resv-row label{display:block;font-weight:700;margin-bottom:8px;font-size:.92rem;color:#2E3238;}
+.mgw-resv-row .mgw-req{color:#F06B48;}
+.mgw-resv-row input,.mgw-resv-row select,.mgw-resv-row textarea{
+  width:100%;padding:12px 14px;border:1.5px solid #EDE6DA;border-radius:12px;
+  font-family:inherit;font-size:.95rem;color:#2E3238;background:#FFF8F0;}
+.mgw-resv-submit{width:100%;margin-top:6px;padding:14px 26px;border:none;border-radius:50px;
+  font-weight:700;font-size:1.05rem;background:#FF8C6B;color:#fff;cursor:pointer;}
+.mgw-resv-success{display:none;margin-top:16px;text-align:center;color:#3A9C88;font-weight:700;font-size:.92rem;}
+.mgw-resv-success.show{display:block;}
+@media (max-width:480px){.mgw-resv-split{grid-template-columns:1fr;}.mgw-resv-form{padding:22px 18px;}}
+</style>
+
+<div class="mgw-resv">
+  <form class="mgw-resv-form" id="mgwResvForm">
+    <div class="mgw-resv-row">
+      <label for="mgwOwnerName">보호자 성명 <span class="mgw-req">*</span></label>
+      <input type="text" id="mgwOwnerName" name="ownerName" placeholder="예: 홍길동" required>
+    </div>
+    <div class="mgw-resv-row">
+      <label for="mgwOwnerPhone">연락처 <span class="mgw-req">*</span></label>
+      <input type="tel" id="mgwOwnerPhone" name="ownerPhone" placeholder="예: 010-1234-5678" required>
+    </div>
+    <div class="mgw-resv-row mgw-resv-split">
+      <div>
+        <label for="mgwPetName">반려동물 이름</label>
+        <input type="text" id="mgwPetName" name="petName" placeholder="예: 코코">
+      </div>
+      <div>
+        <label for="mgwPetType">반려동물 종류</label>
+        <select id="mgwPetType" name="petType">
+          <option value="강아지">강아지</option>
+          <option value="고양이">고양이</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+    </div>
+    <div class="mgw-resv-row mgw-resv-split">
+      <div>
+        <label for="mgwVisitDate">희망 날짜 <span class="mgw-req">*</span></label>
+        <input type="date" id="mgwVisitDate" name="visitDate" required>
+      </div>
+      <div>
+        <label for="mgwVisitTime">희망 시간대</label>
+        <select id="mgwVisitTime" name="visitTime">
+          <option value="오전(09:30~13:00)">오전 (09:30~13:00)</option>
+          <option value="오후(14:00~19:30)">오후 (14:00~19:30)</option>
+        </select>
+      </div>
+    </div>
+    <div class="mgw-resv-row">
+      <label for="mgwVisitReason">진료 항목</label>
+      <select id="mgwVisitReason" name="visitReason">
+        <option value="일반진료">일반진료</option>
+        <option value="예방접종">예방접종</option>
+        <option value="건강검진">건강검진</option>
+        <option value="수술상담">수술상담</option>
+        <option value="기타">기타</option>
+      </select>
+    </div>
+    <div class="mgw-resv-row">
+      <label for="mgwVisitMemo">요청사항</label>
+      <textarea id="mgwVisitMemo" name="visitMemo" rows="3" placeholder="아이의 증상이나 궁금한 점을 자유롭게 남겨주세요."></textarea>
+    </div>
+    <button type="submit" class="mgw-resv-submit">예약 요청 보내기</button>
+    <p class="mgw-resv-success" id="mgwResvSuccess">예약 요청이 접수되었습니다! 이메일 앱이 열리면 그대로 전송해 주세요.</p>
+  </form>
+</div>
+
+<script>
+(function(){
+  var HOSPITAL_EMAIL = 'reservation@monglvet.com'; // 실제 병원 이메일로 교체하세요
+  var form = document.getElementById('mgwResvForm');
+  var success = document.getElementById('mgwResvSuccess');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var data = Object.fromEntries(new FormData(form).entries());
+    var subject = '[온라인 예약] ' + data.ownerName + '님 - ' + data.visitDate;
+    var body = [
+      '보호자 성명: ' + data.ownerName,
+      '연락처: ' + data.ownerPhone,
+      '반려동물 이름: ' + (data.petName || '-'),
+      '반려동물 종류: ' + data.petType,
+      '희망 날짜: ' + data.visitDate,
+      '희망 시간대: ' + data.visitTime,
+      '진료 항목: ' + data.visitReason,
+      '요청사항: ' + (data.visitMemo || '-')
+    ].join('\n');
+    window.location.href = 'mailto:' + HOSPITAL_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    success.classList.add('show');
+    form.reset();
+  });
+})();
+</script>

@@ -1,0 +1,124 @@
+<!--
+  [아임웹 사용법]
+  1. 이 위젯은 페이지 아무 곳에나 추가해도 됩니다 (화면 우측 하단에 고정되어 항상 떠 있어요).
+  2. 아임웹은 페이지마다 위젯을 따로 넣어야 하니, 모든 페이지에 챗봇을 띄우려면
+     아임웹 "사이트 전체 공통 코드 삽입" 기능이 있는지 확인하고 거기에 넣는 걸 추천합니다.
+  3. 답변 문구(KNOWLEDGE_BASE)는 자유롭게 수정/추가하실 수 있어요.
+-->
+<style>
+.mgw-chat{position:fixed;bottom:24px;right:24px;z-index:999;font-family:'Gowun Dodum',sans-serif;}
+.mgw-chat *{box-sizing:border-box;margin:0;padding:0;text-decoration:none;list-style:none;font-style:normal;border:0;}
+.mgw-chat-toggle{width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
+  background:#FF8C6B;color:#fff;font-size:1.5rem;box-shadow:0 10px 24px rgba(255,140,107,.4);
+  animation:mgwChatPulse 2.6s infinite;}
+@keyframes mgwChatPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+.mgw-chat-window{position:absolute;bottom:74px;right:0;width:320px;max-height:440px;background:#fff;
+  border-radius:18px;box-shadow:0 10px 30px rgba(46,50,56,.15);display:flex;flex-direction:column;
+  overflow:hidden;opacity:0;transform:translateY(16px) scale(.97);pointer-events:none;
+  transition:opacity .25s,transform .25s;}
+.mgw-chat-window.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+.mgw-chat-header{background:#4FB6A0;color:#fff;padding:14px 16px;font-weight:700;
+  display:flex;justify-content:space-between;align-items:center;}
+.mgw-chat-header button{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;}
+.mgw-chat-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;max-height:220px;}
+.mgw-chat-msg{max-width:80%;padding:10px 14px;border-radius:14px;font-size:.88rem;line-height:1.5;}
+.mgw-chat-msg.bot{background:#FFF8F0;color:#2E3238;align-self:flex-start;border-bottom-left-radius:4px;}
+.mgw-chat-msg.user{background:#4FB6A0;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.mgw-chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px;}
+.mgw-chat-quick button{background:#FFF8F0;border:1px solid #EDE6DA;border-radius:20px;padding:6px 12px;
+  font-size:.8rem;cursor:pointer;color:#2E3238;font-family:inherit;}
+.mgw-chat-input-row{display:flex;border-top:1px solid #EDE6DA;}
+.mgw-chat-input-row input{flex:1;border:none;padding:12px 14px;font-size:.88rem;font-family:inherit;outline:none;}
+.mgw-chat-input-row button{background:#FF8C6B;color:#fff;border:none;width:44px;cursor:pointer;font-size:1rem;}
+@media (max-width:480px){.mgw-chat-window{width:calc(100vw - 32px);right:-8px;}}
+</style>
+
+<div class="mgw-chat">
+  <div class="mgw-chat-window" id="mgwChatWindow">
+    <div class="mgw-chat-header">
+      <span>🐾 몽글이 챗봇</span>
+      <button id="mgwChatClose" aria-label="닫기">×</button>
+    </div>
+    <div class="mgw-chat-body" id="mgwChatBody"></div>
+    <div class="mgw-chat-quick" id="mgwChatQuick"></div>
+    <form class="mgw-chat-input-row" id="mgwChatForm">
+      <input type="text" id="mgwChatInput" placeholder="질문을 입력해 주세요" autocomplete="off">
+      <button type="submit" aria-label="전송">➤</button>
+    </form>
+  </div>
+  <button class="mgw-chat-toggle" id="mgwChatToggle" aria-label="챗봇 열기">💬</button>
+</div>
+
+<script>
+(function(){
+  var toggle = document.getElementById('mgwChatToggle');
+  var win = document.getElementById('mgwChatWindow');
+  var closeBtn = document.getElementById('mgwChatClose');
+  var body = document.getElementById('mgwChatBody');
+  var quick = document.getElementById('mgwChatQuick');
+  var form = document.getElementById('mgwChatForm');
+  var input = document.getElementById('mgwChatInput');
+
+  var KB = [
+    {keywords:['시간','언제','몇시','영업'], label:'진료시간',
+     answer:'진료시간은 평일 09:30~19:30, 토요일 09:30~15:00입니다. 일요일과 공휴일은 휴진이며, 점심시간은 13:00~14:00입니다.'},
+    {keywords:['비용','가격','진료비','얼마'], label:'진료비',
+     answer:'진찰료는 10,000원부터, 엑스레이·혈액검사 등 주요 비급여 항목은 "진료비안내" 섹션에서 확인하실 수 있어요. 정확한 금액은 방문 상담 시 안내드립니다.'},
+    {keywords:['예약','접수'], label:'예약방법',
+     answer:'전화 또는 홈페이지의 "온라인 예약" 폼으로 예약하실 수 있습니다. 예약 후 병원에서 확인 연락을 드려요.'},
+    {keywords:['위치','주소','오시는','어디','주차'], label:'오시는길',
+     answer:'주소와 오시는 길은 "오시는길" 섹션에서 확인해 주세요. 건물 내 방문객 주차도 가능합니다.'},
+    {keywords:['응급','야간','위급'], label:'응급진료',
+     answer:'진료시간 외 응급 상황은 대표 전화로 먼저 연락 주시면 제휴 응급동물의료센터로 신속히 안내드립니다.'},
+    {keywords:['의료진','원장','의사','수의사'], label:'의료진',
+     answer:'대표원장(외과), 부원장(내과/영상의학), 진료수의사(치과/피부과)가 진료하고 있습니다. 자세한 프로필은 "의료진" 섹션에서 확인해 주세요.'}
+  ];
+  var FALLBACK = '죄송해요, 정확히 이해하지 못했어요. 자세한 상담은 대표 전화로 문의해 주시면 친절히 안내드릴게요!';
+
+  function addMessage(text, sender){
+    var msg = document.createElement('div');
+    msg.className = 'mgw-chat-msg ' + sender;
+    msg.textContent = text;
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+  }
+  function findAnswer(text){
+    var lower = text.toLowerCase();
+    for (var i=0;i<KB.length;i++){
+      for (var j=0;j<KB[i].keywords.length;j++){
+        if (lower.indexOf(KB[i].keywords[j]) !== -1) return KB[i].answer;
+      }
+    }
+    return FALLBACK;
+  }
+  function renderQuick(){
+    quick.innerHTML = '';
+    KB.forEach(function(item){
+      var btn = document.createElement('button');
+      btn.textContent = item.label;
+      btn.addEventListener('click', function(){ handleMessage(item.label, item.answer); });
+      quick.appendChild(btn);
+    });
+  }
+  function handleMessage(text, preset){
+    addMessage(text, 'user');
+    setTimeout(function(){ addMessage(preset || findAnswer(text), 'bot'); }, 400);
+  }
+
+  toggle.addEventListener('click', function(){
+    win.classList.toggle('open');
+    if (win.classList.contains('open') && body.children.length === 0){
+      addMessage('안녕하세요! 몽글동물병원 안내 챗봇입니다 🐾 궁금한 점을 선택하거나 직접 입력해 주세요.', 'bot');
+      renderQuick();
+    }
+  });
+  closeBtn.addEventListener('click', function(){ win.classList.remove('open'); });
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    handleMessage(text);
+    input.value = '';
+  });
+})();
+</script>
