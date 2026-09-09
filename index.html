@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>몽글동물병원 | 우리 아이가 행복한 병원</title>
+<meta name="description" content="몽글동물병원 - 투명한 진료비 공개, 전문 의료진과 함께하는 반려동물 전문 동물병원">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="header">
+  <div class="nav-wrap">
+    <a href="#home" class="logo">🐾 몽글동물병원</a>
+    <nav class="nav-menu" id="navMenu">
+      <a href="#about">병원소개</a>
+      <a href="#fees">진료비안내</a>
+      <a href="#doctors">의료진</a>
+      <a href="#info">진료안내</a>
+      <a href="#location">오시는길</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a href="#contact" class="btn btn-nav">전화 예약</a>
+    <button class="hamburger" id="hamburger" aria-label="메뉴 열기">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ===================== HERO : 모션그래픽 인트로 ===================== -->
+<section class="hero" id="home">
+  <div class="hero-sky">
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+  </div>
+
+  <div class="hero-scene">
+    <div class="paw-trail">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <!-- 강아지 캐릭터 (SVG, 순수 CSS 애니메이션) -->
+    <div class="pet dog">
+      <svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="120" rx="55" ry="30" fill="#F2B183"/>
+        <circle cx="70" cy="70" r="38" fill="#F2B183"/>
+        <ellipse cx="45" cy="45" rx="14" ry="22" fill="#E89A5C" transform="rotate(-25 45 45)"/>
+        <ellipse cx="95" cy="45" rx="14" ry="22" fill="#E89A5C" transform="rotate(25 95 45)"/>
+        <circle cx="58" cy="68" r="5" fill="#3A2C22" class="blink"/>
+        <circle cx="82" cy="68" r="5" fill="#3A2C22" class="blink"/>
+        <ellipse cx="70" cy="84" rx="8" ry="6" fill="#3A2C22"/>
+        <path d="M55 92 Q70 102 85 92" stroke="#3A2C22" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <ellipse class="tail" cx="150" cy="110" rx="10" ry="22" fill="#F2B183" transform="rotate(30 150 110)"/>
+      </svg>
+    </div>
+
+    <!-- 고양이 캐릭터 -->
+    <div class="pet cat">
+      <svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="122" rx="50" ry="26" fill="#B9B4E0"/>
+        <circle cx="130" cy="72" r="34" fill="#B9B4E0"/>
+        <polygon points="108,48 118,20 128,50" fill="#B9B4E0"/>
+        <polygon points="150,48 160,20 168,52" fill="#B9B4E0"/>
+        <circle cx="120" cy="72" r="4.5" fill="#2E2A44" class="blink"/>
+        <circle cx="140" cy="72" r="4.5" fill="#2E2A44" class="blink"/>
+        <path d="M128 82 L132 86 L136 82" stroke="#2E2A44" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <ellipse class="tail-cat" cx="55" cy="115" rx="9" ry="30" fill="#B9B4E0" transform="rotate(-20 55 115)"/>
+      </svg>
+    </div>
+
+    <div class="grass"></div>
+  </div>
+
+  <div class="hero-text">
+    <p class="eyebrow">MONGL ANIMAL HOSPITAL</p>
+    <h1>우리 아이가<br>편안하게 웃는 병원</h1>
+    <p class="hero-sub">진료비는 투명하게, 진료는 정성스럽게.<br>몽글동물병원이 함께합니다.</p>
+    <div class="hero-btns">
+      <a href="#contact" class="btn btn-primary">전화 예약하기</a>
+      <a href="#fees" class="btn btn-ghost">진료비 확인하기</a>
+    </div>
+  </div>
+
+  <a href="#about" class="scroll-down" aria-label="아래로 스크롤">↓</a>
+</section>
+
+<!-- ===================== 병원 소개 ===================== -->
+<section class="section about" id="about">
+  <div class="container reveal">
+    <p class="tag">ABOUT US</p>
+    <h2>안녕하세요, 몽글동물병원입니다</h2>
+    <p class="lead">
+      몽글동물병원은 "보호자와 반려동물 모두가 편안한 진료"를 최우선으로 생각합니다.
+      낯선 병원에서 긴장하지 않도록 아이의 눈높이에서 천천히 다가가고,
+      보호자님께는 진단과 치료 과정을 충분히 설명드리는 것을 원칙으로 합니다.
+    </p>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="icon">🩺</div>
+        <h3>정직한 진료</h3>
+        <p>불필요한 검사·처치를 권하지 않고, 꼭 필요한 진료만 안내합니다.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">💛</div>
+        <h3>편안한 환경</h3>
+        <p>아이들이 긴장하지 않도록 조용하고 안정적인 진료 공간을 유지합니다.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">📋</div>
+        <h3>투명한 안내</h3>
+        <p>진료 전 예상 비용과 과정을 미리 설명드려 놀라실 일이 없도록 합니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 진료비(비급여) 공개 ===================== -->
+<section class="section fees" id="fees">
+  <div class="container reveal">
+    <p class="tag">FEE INFORMATION</p>
+    <h2>진료비, 숨기지 않고 미리 알려드려요</h2>
+    <p class="lead">
+      동물병원 진료비는 병원마다 차이가 있을 수 있습니다. 몽글동물병원은
+      보호자님이 안심하고 방문하실 수 있도록 주요 비급여 진료 항목의
+      비용을 미리 공개합니다. (아래 금액은 기본 진료 기준 예시이며,
+      아이의 상태·체중·마취 필요 여부에 따라 달라질 수 있습니다.)
+    </p>
+
+    <div class="fee-table-wrap">
+      <table class="fee-table">
+        <thead>
+          <tr><th>진료 항목</th><th>세부 내용</th><th>비용(원)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>진찰료</td><td>초진</td><td>10,000 ~ 15,000</td></tr>
+          <tr><td>진찰료</td><td>재진</td><td>5,000 ~ 10,000</td></tr>
+          <tr><td>엑스레이 검사</td><td>1부위 촬영</td><td>25,000 ~ 35,000</td></tr>
+          <tr><td>엑스레이 검사</td><td>2부위 이상</td><td>40,000 ~ 60,000</td></tr>
+          <tr><td>혈액검사</td><td>기본 혈액검사(CBC)</td><td>30,000 ~ 45,000</td></tr>
+          <tr><td>혈액검사</td><td>종합 혈액검사(생화학 포함)</td><td>70,000 ~ 120,000</td></tr>
+          <tr><td>복부 초음파</td><td>기본 검사</td><td>60,000 ~ 100,000</td></tr>
+          <tr><td>스케일링(치석제거)</td><td>전신마취 포함</td><td>150,000 ~ 300,000</td></tr>
+          <tr><td>종합 예방접종</td><td>1회</td><td>15,000 ~ 20,000</td></tr>
+          <tr><td>광견병 예방접종</td><td>1회</td><td>15,000 ~ 20,000</td></tr>
+          <tr><td>심장사상충 예방</td><td>월 1회(체중별 차등)</td><td>10,000 ~ 25,000</td></tr>
+          <tr><td>중성화 수술</td><td>수컷 / 암컷</td><td>150,000 ~ 400,000</td></tr>
+          <tr><td>입원비</td><td>1일 기준</td><td>30,000 ~ 50,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fee-note">
+      ※ 상기 비용은 참고용 예시 금액이며, 정확한 진료비는 아이의 상태에 따라 진료 전 상담 시 상세히 안내드립니다.<br>
+      ※ 「수의사법」에 따라 주요 비급여 진료항목 비용을 게시하고 있습니다.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 의료진 소개 ===================== -->
+<section class="section doctors" id="doctors">
+  <div class="container reveal">
+    <p class="tag">OUR DOCTORS</p>
+    <h2>믿을 수 있는 의료진이 함께합니다</h2>
+
+    <div class="doctor-grid">
+      <div class="doctor-card">
+        <div class="doctor-avatar">🐶</div>
+        <h3>김민준 원장</h3>
+        <p class="role">대표원장 · 외과/응급의학 전문</p>
+        <ul>
+          <li>OO대학교 수의학과 졸업</li>
+          <li>前 OO동물의료센터 외과 전문의</li>
+          <li>임상 경력 15년</li>
+        </ul>
+        <p class="quote">"아이의 통증을 최소화하는 진료를 최우선으로 생각합니다."</p>
+      </div>
+      <div class="doctor-card">
+        <div class="doctor-avatar">🐱</div>
+        <h3>이서연 부원장</h3>
+        <p class="role">내과 · 영상의학 전문</p>
+        <ul>
+          <li>OO대학교 수의학과 졸업</li>
+          <li>수의영상의학 인증의</li>
+          <li>임상 경력 10년</li>
+        </ul>
+        <p class="quote">"정확한 진단이 곧 빠른 회복의 시작입니다."</p>
+      </div>
+      <div class="doctor-card">
+        <div class="doctor-avatar">🐰</div>
+        <h3>박도윤 진료수의사</h3>
+        <p class="role">치과 · 피부과 전문</p>
+        <ul>
+          <li>OO대학교 수의학과 졸업</li>
+          <li>수의치과학회 정회원</li>
+          <li>임상 경력 6년</li>
+        </ul>
+        <p class="quote">"작은 불편함도 놓치지 않고 꼼꼼히 살펴봅니다."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 진료 안내 ===================== -->
+<section class="section info" id="info">
+  <div class="container reveal">
+    <p class="tag">HOSPITAL INFO</p>
+    <h2>진료 안내</h2>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <h3>⏰ 진료시간</h3>
+        <table class="hours-table">
+          <tr><td>평일</td><td>09:30 - 19:30</td></tr>
+          <tr><td>토요일</td><td>09:30 - 15:00</td></tr>
+          <tr><td>일요일 · 공휴일</td><td>휴진 (응급 진료는 사전 전화 문의)</td></tr>
+          <tr><td>점심시간</td><td>13:00 - 14:00</td></tr>
+        </table>
+      </div>
+
+      <div class="info-card">
+        <h3>📌 진료 안내사항</h3>
+        <ul class="check-list">
+          <li>모든 진료는 예약제로 운영되며, 워크인 진료는 대기가 발생할 수 있습니다.</li>
+          <li>초진 시 이전 병원 진료 기록이 있다면 함께 지참해 주세요.</li>
+          <li>수술/마취가 필요한 진료는 사전 상담 후 일정을 잡습니다.</li>
+          <li>접종 후 15~20분간 병원 내 대기를 권장합니다.</li>
+        </ul>
+      </div>
+
+      <div class="info-card">
+        <h3>🚑 응급 진료</h3>
+        <p>
+          진료시간 외 응급 상황 발생 시, 대표 전화로 먼저 연락 주시면
+          제휴 응급동물의료센터로 신속히 안내드립니다.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 이용후기 ===================== -->
+<section class="section reviews" id="reviews">
+  <div class="container reveal">
+    <p class="tag">REVIEWS</p>
+    <h2>보호자님들의 이야기</h2>
+
+    <div class="review-grid">
+      <div class="review-card">
+        <p class="stars">★★★★★</p>
+        <p>"진료비를 미리 설명해주셔서 부담 없이 방문할 수 있었어요. 강아지도 편안해 보였습니다."</p>
+        <p class="author">- 코코 보호자</p>
+      </div>
+      <div class="review-card">
+        <p class="stars">★★★★★</p>
+        <p>"고양이가 병원을 싫어하는데, 여기서는 순하게 진료를 받네요. 원장님이 정말 친절하세요."</p>
+        <p class="author">- 나비 보호자</p>
+      </div>
+      <div class="review-card">
+        <p class="stars">★★★★★</p>
+        <p>"수술 전후 과정을 자세히 설명해주셔서 믿고 맡길 수 있었습니다. 감사합니다."</p>
+        <p class="author">- 뭉치 보호자</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FAQ ===================== -->
+<section class="section faq" id="faq">
+  <div class="container reveal">
+    <p class="tag">FAQ</p>
+    <h2>자주 묻는 질문</h2>
+
+    <div class="accordion" id="accordion">
+      <div class="acc-item">
+        <button class="acc-head">예약은 꼭 해야 하나요? <span>+</span></button>
+        <div class="acc-body"><p>네, 대기 시간을 줄이기 위해 예약제로 운영하고 있습니다. 전화 또는 방문 접수로 예약해 주세요.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-head">초진 시 무엇을 챙겨가야 하나요? <span>+</span></button>
+        <div class="acc-body"><p>이전 병원 진료 기록, 접종 수첩(있는 경우), 최근 복용 중인 약이 있다면 함께 가져와 주세요.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-head">애견호텔(위탁) 서비스도 하나요? <span>+</span></button>
+        <div class="acc-body"><p>현재는 진료 목적의 단기 입원만 가능하며, 일반 위탁(호텔) 서비스는 운영하지 않습니다.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-head">심장사상충 예방은 꼭 매달 해야 하나요? <span>+</span></button>
+        <div class="acc-body"><p>네, 모기를 매개로 감염되기 때문에 계절과 무관하게 매달 예방하는 것을 권장합니다.</p></div>
+      </div>
+      <div class="acc-item">
+        <button class="acc-head">주차는 가능한가요? <span>+</span></button>
+        <div class="acc-body"><p>병원 건물 내 방문객 주차 공간이 마련되어 있으며, 접수 시 주차 등록을 도와드립니다.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 오시는길 & CTA ===================== -->
+<section class="section location" id="location">
+  <div class="container reveal">
+    <p class="tag">LOCATION</p>
+    <h2>오시는 길</h2>
+    <div class="location-grid">
+      <div class="map-placeholder">
+        <p>🗺️ 지도 영역<br><span>(실제 서비스 시 카카오맵/네이버맵 API로 교체)</span></p>
+      </div>
+      <div class="location-detail">
+        <p><strong>주소</strong><br>서울特별시 OO구 OO로 123 몽글빌딩 1층</p>
+        <p><strong>전화</strong><br>02-1234-5678</p>
+        <p><strong>대중교통</strong><br>OO역 3번 출구에서 도보 5분</p>
+        <p><strong>주차</strong><br>건물 내 방문객 주차 2시간 무료</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="contact">
+  <div class="container reveal">
+    <h2>지금 바로 예약해보세요</h2>
+    <p>전화 한 통으로 우리 아이의 편안한 진료를 예약할 수 있습니다.</p>
+    <a href="tel:02-1234-5678" class="btn btn-primary btn-lg">📞 02-1234-5678 전화하기</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <p class="foot-logo">🐾 몽글동물병원</p>
+      <p>서울특별시 OO구 OO로 123 몽글빌딩 1층</p>
+      <p>대표전화 02-1234-5678 · 사업자등록번호 000-00-00000</p>
+      <p>대표자 김민준 · 통신판매업 신고번호 제0000-서울OO-0000호</p>
+    </div>
+    <div class="foot-links">
+      <a href="#about">병원소개</a>
+      <a href="#fees">진료비안내</a>
+      <a href="#doctors">의료진</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+  <p class="copyright">© 2026 Mongl Animal Hospital. All rights reserved.</p>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
