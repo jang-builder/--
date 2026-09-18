@@ -1,0 +1,140 @@
+/* ===== 상세페이지 생성기 UI ===== */
+:root{
+  --bg:#F2F4F6;
+  --panel:#FFFFFF;
+  --line:#E4E7EA;
+  --ink:#1F2328;
+  --gray:#6B7278;
+  --point:#3D6DFF;
+  --point-dark:#2B55D6;
+  --ok:#00B26B;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6; letter-spacing:-0.01em;
+}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:14px;}
+
+/* ---- 상단바 ---- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:#fff; border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:12px; padding:12px 20px; flex-wrap:wrap;
+}
+.topbar h1{font-size:17px; font-weight:800; margin-right:auto; white-space:nowrap;}
+.topbar h1 small{display:block; font-size:12px; font-weight:500; color:var(--gray); letter-spacing:0;}
+.btn{
+  border:1px solid var(--line); background:#fff; color:var(--ink);
+  border-radius:9px; padding:9px 14px; font-size:13.5px; font-weight:700; white-space:nowrap;
+  transition:.15s;
+}
+.btn:hover{border-color:#C9CFD6; background:#FAFBFC;}
+.btn-main{background:var(--point); border-color:var(--point); color:#fff;}
+.btn-main:hover{background:var(--point-dark); border-color:var(--point-dark);}
+.btn-ghost{background:transparent; border-color:transparent; color:var(--gray);}
+.btn-sm{padding:6px 10px; font-size:12.5px;}
+
+/* ---- 레이아웃 ---- */
+.wrap{display:flex; align-items:flex-start; gap:0;}
+.panel{
+  width:420px; flex:0 0 420px; background:var(--panel);
+  border-right:1px solid var(--line); height:calc(100vh - 57px);
+  overflow-y:auto; padding:0 0 60px;
+}
+.stage{flex:1; padding:26px; height:calc(100vh - 57px); overflow-y:auto;}
+
+/* ---- 아코디언 그룹 ---- */
+.group{border-bottom:1px solid var(--line);}
+.group > summary{
+  list-style:none; cursor:pointer; padding:16px 20px;
+  font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;
+}
+.group > summary::-webkit-details-marker{display:none;}
+.group > summary:before{content:'▸'; color:var(--gray); font-size:12px; transition:.15s;}
+.group[open] > summary:before{transform:rotate(90deg);}
+.group > summary:hover{background:#FAFBFC;}
+.group .body{padding:4px 20px 22px;}
+
+/* ---- 폼 ---- */
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12.5px; font-weight:700; color:#41474D; margin-bottom:6px;}
+.field .hint{font-size:11.5px; font-weight:500; color:var(--gray);}
+.field input[type=text], .field input[type=number], .field select, .field textarea{
+  width:100%; border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fff;
+}
+.field textarea{resize:vertical; min-height:62px; line-height:1.55;}
+.field input:focus, .field select:focus, .field textarea:focus{
+  outline:none; border-color:var(--point); box-shadow:0 0 0 3px rgba(61,109,255,.12);
+}
+.row2{display:flex; gap:10px;}
+.row2 > *{flex:1; min-width:0;}
+.color-row{display:flex; align-items:center; gap:10px;}
+.color-row input[type=color]{width:46px; height:38px; border:1px solid var(--line); border-radius:8px; background:#fff; padding:3px;}
+.swatches{display:flex; gap:6px;}
+.swatches button{width:26px; height:26px; border-radius:50%; border:1px solid rgba(0,0,0,.08);}
+
+/* ---- 반복 입력 ---- */
+.rep-item{
+  border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:#FBFCFD;
+}
+.rep-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+.rep-head b{font-size:12.5px; color:#41474D;}
+.rep-del{border:none; background:none; color:#C0454A; font-size:12.5px; font-weight:700;}
+.rep-item input, .rep-item textarea{margin-bottom:6px;}
+.add-btn{
+  width:100%; border:1px dashed #C9CFD6; background:#fff; color:var(--gray);
+  border-radius:10px; padding:11px; font-size:13px; font-weight:700;
+}
+.add-btn:hover{border-color:var(--point); color:var(--point);}
+
+/* ---- 이미지 ---- */
+.drop{
+  border:1px dashed #C9CFD6; border-radius:10px; padding:18px; text-align:center;
+  font-size:13px; color:var(--gray); background:#FBFCFD; cursor:pointer;
+}
+.drop:hover{border-color:var(--point); color:var(--point);}
+.drop.on{border-color:var(--point); background:rgba(61,109,255,.05);}
+.thumbs{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+.thumb{position:relative; width:72px; height:72px; border-radius:8px; overflow:hidden; border:1px solid var(--line);}
+.thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.thumb button{
+  position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%;
+  border:none; background:rgba(0,0,0,.6); color:#fff; font-size:12px; line-height:1;
+}
+
+/* ---- 섹션 토글 ---- */
+.toggles{display:flex; flex-direction:column; gap:2px;}
+.toggles label{
+  display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:8px;
+  font-size:13.5px; font-weight:600; cursor:pointer;
+}
+.toggles label:hover{background:#F7F8FA;}
+.toggles input{width:16px; height:16px; accent-color:var(--point);}
+
+/* ---- 미리보기 무대 ---- */
+.stage-bar{
+  display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:13px; color:var(--gray);
+}
+.stage-bar .chip{
+  background:#fff; border:1px solid var(--line); border-radius:100px; padding:6px 12px;
+  font-weight:700; color:#41474D; font-size:12.5px;
+}
+.viewport{margin:0 auto; width:860px; transform-origin:top center;}
+.viewport-outer{overflow:hidden;}
+.paper{background:#fff; box-shadow:0 6px 30px rgba(31,35,40,.10); border-radius:4px; overflow:hidden;}
+
+/* ---- 토스트 ---- */
+.toast{
+  position:fixed; left:50%; bottom:34px; transform:translateX(-50%) translateY(20px);
+  background:#1F2328; color:#fff; padding:13px 22px; border-radius:100px; font-size:14px; font-weight:700;
+  opacity:0; pointer-events:none; transition:.25s; z-index:200;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+@media (max-width:1100px){
+  .wrap{flex-direction:column;}
+  .panel{width:100%; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+  .stage{width:100%; height:auto;}
+}

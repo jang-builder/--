@@ -1,0 +1,252 @@
+/* ============================================================
+   copywriter.js
+   상세페이지 판매 문구 자동 작성 엔진 (규칙 기반, 외부 API 없음)
+   입력값(제품명/카테고리/타겟/특징)을 실제 잘 팔리는 상세페이지
+   문장 패턴에 끼워 넣어 카피를 만들어 준다.
+   ============================================================ */
+
+const COPY = (() => {
+
+  /* ---------- 카테고리별 재료 ---------- */
+  const CATEGORY = {
+    food: {
+      label: '음식 · 식품',
+      pains: ['집에서 해 먹자니 손질부터가 일이고', '사 먹자니 가격도, 위생도 신경 쓰이고', '맛있다 싶으면 꼭 자극적이고'],
+      wish: '차려 먹는 수고 없이, 제대로 된 한 끼',
+      trustWords: ['HACCP 인증 시설 생산', '주문 후 당일 포장', '신선 아이스박스 발송'],
+      faq: [
+        ['유통기한은 어떻게 되나요?', '냉동 보관 시 제조일로부터 표기된 기한까지 드실 수 있습니다. 개봉 후에는 가급적 빨리 드시는 걸 권해드려요.'],
+        ['조리는 어렵지 않나요?', '포장을 뜯고 안내된 시간만 데우면 끝입니다. 별도 손질이 필요 없어요.'],
+        ['보관은 어떻게 하나요?', '받으신 즉시 냉동(또는 냉장) 보관해 주세요. 상세 보관법은 포장 뒷면에 적혀 있습니다.']
+      ],
+      recos: ['끼니를 자주 거르거나 대충 때우게 되는 분', '요리할 시간은 없지만 제대로 먹고 싶은 분', '냉동실에 믿고 꺼낼 한 끼를 두고 싶은 분'],
+      unit: '한 팩'
+    },
+    beauty: {
+      label: '화장품 · 뷰티',
+      pains: ['발라도 그때뿐인 속건조', '순한 건 효과가 없고, 효과 있는 건 따갑고', '아침마다 들뜨는 화장'],
+      wish: '자극 없이, 바르는 순간부터 달라지는 피부',
+      trustWords: ['피부 자극 테스트 완료', '국내 제조', '민감성 피부 사용 적합 판정'],
+      faq: [
+        ['민감성 피부도 쓸 수 있나요?', '자극 테스트를 마친 제품이지만, 피부가 예민하시면 귀 뒤나 팔 안쪽에 먼저 테스트해 보시길 권해드립니다.'],
+        ['사용 순서가 어떻게 되나요?', '세안 후 토너 다음 단계에 사용하시면 가장 잘 흡수됩니다.'],
+        ['개봉 후 얼마나 쓸 수 있나요?', '개봉 후 12개월 이내 사용을 권장하며, 직사광선을 피해 서늘한 곳에 보관해 주세요.']
+      ],
+      recos: ['이것저것 써봤지만 만족한 적이 없는 분', '피부가 예민해 순한 제품을 찾는 분', '아침 화장이 잘 먹었으면 하는 분'],
+      unit: '한 통'
+    },
+    fashion: {
+      label: '의류 · 패션잡화',
+      pains: ['사진이랑 실물이 다를까 봐 망설여지고', '한 번 빨면 늘어나는 옷들', '예쁜 건 불편하고, 편한 건 늘어져 보이고'],
+      wish: '아무렇게나 입어도 정돈돼 보이는 핏',
+      trustWords: ['자체 제작', '실측 사이즈 공개', '세탁 테스트 완료'],
+      faq: [
+        ['사이즈는 어떻게 고르나요?', '아래 실측표를 평소 입으시는 옷과 비교해 보세요. 중간이라면 큰 사이즈를 추천드립니다.'],
+        ['세탁은 어떻게 하나요?', '30도 이하 찬물에서 단독 손세탁 또는 세탁망 사용을 권장합니다.'],
+        ['교환·반품이 되나요?', '착용 흔적이 없는 상태라면 수령 후 7일 이내 교환·반품이 가능합니다.']
+      ],
+      recos: ['입을 옷은 많은데 입을 게 없는 분', '한 벌로 오래 입을 옷을 찾는 분', '핏 때문에 온라인 구매가 망설여지던 분'],
+      unit: '한 벌'
+    },
+    living: {
+      label: '생활 · 주방용품',
+      pains: ['싼 걸 샀다가 금방 망가져 다시 사고', '자리만 차지하고 결국 안 쓰게 되고', '청소가 번거로워 점점 손이 안 가고'],
+      wish: '한 번 사두면 오래 쓰는, 손이 자주 가는 물건',
+      trustWords: ['KC 안전 인증', 'A/S 가능', '1년 품질 보증'],
+      faq: [
+        ['설치가 어렵지 않나요?', '별도 공구 없이 설명서대로 끼우기만 하면 됩니다. 보통 5분이면 끝나요.'],
+        ['세척은 어떻게 하나요?', '분리해서 물로 헹군 뒤 말려 주시면 됩니다. 식기세척기 사용 여부는 상세 정보를 확인해 주세요.'],
+        ['부품만 따로 살 수 있나요?', '네, 소모품은 별도 구매가 가능합니다. 문의 남겨 주시면 안내드릴게요.']
+      ],
+      recos: ['싼 걸 샀다가 금방 바꾼 경험이 있는 분', '집안일에 드는 시간을 줄이고 싶은 분', '한 번 사서 오래 쓰고 싶은 분'],
+      unit: '한 세트'
+    },
+    health: {
+      label: '건강 · 반려동물',
+      pains: ['꾸준히 챙겨 먹는 게 제일 어렵고', '성분표를 봐도 뭐가 좋은지 모르겠고', '효과는 모르겠는데 돈은 계속 나가고'],
+      wish: '매일 챙기기 쉬운, 믿을 수 있는 관리 습관',
+      trustWords: ['식약처 신고 완료', '원료 원산지 공개', '무첨가 제조'],
+      faq: [
+        ['언제 먹이면(먹으면) 좋나요?', '하루 1회, 식후에 드시는 걸 권장합니다. 정해진 시간에 드시면 잊지 않고 챙기기 좋아요.'],
+        ['얼마나 먹어야 효과를 보나요?', '개인차가 있지만 최소 4주 이상 꾸준히 섭취하시길 권해드립니다.'],
+        ['다른 제품과 같이 먹어도 되나요?', '일반적으로 병행이 가능하지만, 복용 중인 약이 있다면 전문가와 상담해 주세요.']
+      ],
+      recos: ['챙겨 먹어야지 하면서 매번 놓치는 분', '성분을 꼼꼼히 보고 고르는 분', '가족을 위해 믿을 만한 걸 찾는 분'],
+      unit: '한 박스'
+    },
+    service: {
+      label: '서비스 · 클래스',
+      pains: ['어디에 맡겨야 할지 기준이 없고', '견적을 물어보기부터가 부담스럽고', '막상 맡겨도 진행 상황을 알 수 없고'],
+      wish: '처음부터 끝까지 설명해 주는 곳',
+      trustWords: ['사전 견적 무료', '진행 과정 실시간 공유', '재방문율 기준 운영'],
+      faq: [
+        ['상담만 받아봐도 되나요?', '네, 상담과 견적은 무료입니다. 부담 없이 문의 주세요.'],
+        ['얼마나 걸리나요?', '기본 일정은 아래 안내를 참고해 주세요. 상황에 따라 조정해 드립니다.'],
+        ['예약은 어떻게 하나요?', '문의를 남겨 주시면 순서대로 연락드려 일정을 잡아드립니다.']
+      ],
+      recos: ['어디에 맡겨야 할지 고민 중인 분', '견적부터 편하게 물어보고 싶은 분', '설명을 제대로 들어보고 결정하고 싶은 분'],
+      unit: '1회'
+    },
+    etc: {
+      label: '기타',
+      pains: ['비슷해 보이는 제품이 너무 많고', '무엇을 기준으로 골라야 할지 모르겠고', '잘못 사면 그냥 버리게 되고'],
+      wish: '고민하지 않고 고를 수 있는 기준',
+      trustWords: ['재구매율 기준 상위', '전 제품 검수 후 발송', '교환·반품 안내 명확'],
+      faq: [
+        ['배송은 얼마나 걸리나요?', '영업일 기준 안내된 일정 내 출고됩니다. 주말·공휴일은 제외됩니다.'],
+        ['교환이 가능한가요?', '수령 후 7일 이내, 상품이 훼손되지 않은 상태라면 가능합니다.'],
+        ['대량 구매 할인이 있나요?', '수량에 따라 조정이 가능합니다. 문의 남겨 주세요.']
+      ],
+      recos: ['비슷한 제품이 많아 고르기 어려우신 분', '실패 없이 한 번에 고르고 싶은 분', '오래 쓸 만한 걸 찾는 분'],
+      unit: '한 개'
+    }
+  };
+
+  /* ---------- 톤별 문장 틀 ---------- */
+  const TONE = {
+    trust: {
+      label: '신뢰형',
+      heads: [
+        '{targetI} 다시 찾는 이유,\n{name}',
+        '{name},\n{targetEul} 위해 다시 만들었습니다',
+        '괜히 오래 팔리는 게 아닙니다\n{name}'
+      ],
+      subs: ['{wish}. 그 기준 하나로 만들었습니다.', '과장 없이, 필요한 것만 담았습니다.', '한 번 써보시면 왜 바꾸지 않는지 아시게 됩니다.'],
+      ctas: ['오늘 주문하면 가장 빠르게 받아보실 수 있습니다', '망설이신다면, 하나만 먼저 써보세요', '지금 준비된 수량만 판매합니다']
+    },
+    emotion: {
+      label: '감성형',
+      heads: [
+        '오늘 하루,\n{name} 하나면 충분해요',
+        '{target}에게\n작지만 확실한 변화',
+        '{nameRo}\n달라진 아침을 만나보세요'
+      ],
+      subs: ['{wish}, 그 기분을 담았어요.', '사소한 것 같지만, 매일이 달라집니다.', '써보신 분들이 먼저 알아봐 주셨어요.'],
+      ctas: ['지금 나를 위한 선물 하나', '오늘의 나에게 한 번 써보세요', '기분 좋은 변화, 오늘부터 시작해요']
+    },
+    value: {
+      label: '가성비형',
+      heads: [
+        '이 가격에 이 퀄리티?\n{name}',
+        '{target} 필수템,\n{name} {priceLine}',
+        '더 싸게 파는 곳은 있어도\n이 구성은 없습니다'
+      ],
+      subs: ['{wish}. 가격은 낮추고, 쓸 건 그대로 남겼습니다.', '광고비 대신 품질에 썼습니다.', '한 번 계산해 보시면 답이 나옵니다.'],
+      ctas: ['이 가격은 이번 물량까지입니다', '지금이 가장 저렴할 때입니다', '수량 소진 시 정가로 돌아갑니다']
+    }
+  };
+
+  /* ---------- 유틸 ---------- */
+  const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
+
+  // 받침 유무에 맞춰 조사를 골라준다. josa('소고기무국','을') → '을'
+  const JOSA = { '을': ['을', '를'], '이': ['이', '가'], '은': ['은', '는'], '과': ['과', '와'], '으로': ['으로', '로'] };
+  const DIGIT_BATCHIM = { '0': 1, '1': 1, '3': 1, '6': 1, '7': 1, '8': 1, '2': 0, '4': 0, '5': 0, '9': 0 };
+  function josa(word, kind) {
+    const pair = JOSA[kind] || JOSA['을'];
+    const w = String(word || '').trim();
+    if (!w) return pair[1];
+    const ch = w[w.length - 1];
+    const code = ch.charCodeAt(0);
+    let hasBatchim;
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+      const jong = (code - 0xAC00) % 28;
+      // 'ㄹ' 받침은 '으로/로'에서 받침 없는 것처럼 취급
+      hasBatchim = kind === '으로' ? (jong !== 0 && jong !== 8) : jong !== 0;
+    } else if (DIGIT_BATCHIM[ch] != null) {
+      hasBatchim = !!DIGIT_BATCHIM[ch];
+    } else {
+      return pair[1];   // 영문·기호로 끝나면 받침 없는 형태로
+    }
+    return hasBatchim ? pair[0] : pair[1];
+  }
+  const withJosa = (word, kind) => `${word}${josa(word, kind)}`;
+  const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';
+
+  function fill(tpl, v) {
+    return tpl.replace(/\{(\w+)\}/g, (_, k) => v[k] != null ? v[k] : '');
+  }
+
+  /* ---------- 특징 → 혜택 문장 변환 ---------- */
+  // 사장님이 쓰는 "특징"(사실)을 손님이 느끼는 "혜택"(결과)으로 바꿔준다.
+  const BENEFIT_PATTERN = [
+    '{f}. 처음 구매하시는 분도 실패하지 않는 이유입니다.',
+    '{f}. 번거로운 과정을 줄여, 자연스럽게 손이 자주 갑니다.',
+    '{f}. 다른 제품과 직접 비교해 보셔도 좋습니다.',
+    '{f}. 매일 함께하는 것일수록 이 차이가 크게 느껴집니다.',
+    '{f}. 오래 만족하실 수 있도록 여기에 가장 신경 썼습니다.'
+  ];
+
+  /* ---------- 메인 ---------- */
+  // state: { category, tone, name, brand, target, price, salePrice, features:[{title,desc}], variant }
+  function generate(state) {
+    const cat = CATEGORY[state.category] || CATEGORY.etc;
+    const tone = TONE[state.tone] || TONE.trust;
+    const v = Number(state.variant || 0);
+
+    const price = Number(state.price) || 0;
+    const sale = Number(state.salePrice) || 0;
+    const hasSale = sale > 0 && sale < price;
+    const percent = hasSale ? Math.round((1 - sale / price) * 100) : 0;
+
+    const vars = {
+      name: state.name || '우리 상품',
+      target: state.target || '고객님',
+      wish: cat.wish,
+      unit: cat.unit,
+      priceLine: hasSale ? won(sale) : (price ? won(price) : '')
+    };
+    vars.targetI = withJosa(vars.target, '이');
+    vars.targetEul = withJosa(vars.target, '을');
+    vars.nameRo = withJosa(vars.name, '으로');
+
+    const headRaw = fill(pick(tone.heads, v), vars);
+    const features = (state.features || []).filter(f => f && f.title);
+
+    return {
+      categoryLabel: cat.label,
+      toneLabel: tone.label,
+      headline: headRaw,
+      sub: fill(pick(tone.subs, v + 1), vars),
+      priceInfo: { price, sale, hasSale, percent, priceText: won(price), saleText: won(sale) },
+
+      // 이런 분께 추천
+      recommend: [
+        `${vars.target}${josa(vars.target, '이')}라면 특히 잘 맞습니다`,
+        ...cat.recos
+      ],
+
+      // 문제 공감
+      painTitle: '혹시, 이런 적 없으셨나요?',
+      pains: cat.pains,
+      painClose: `${vars.wish}.\n그래서 ${withJosa(vars.name, '을')} 만들었습니다.`,
+
+      // 핵심 혜택 (특징 → 혜택 변환)
+      benefits: features.map((f, i) => ({
+        no: String(i + 1).padStart(2, '0'),
+        title: f.title,
+        body: f.desc && f.desc.trim()
+          ? f.desc.trim()
+          : fill(pick(BENEFIT_PATTERN, v + i), { f: f.title })
+      })),
+
+      // 신뢰 요소
+      trust: cat.trustWords,
+
+      // 비교표
+      compare: {
+        head: ['비교 항목', '일반 제품', vars.name],
+        rows: features.slice(0, 4).map(f => [f.title, '제품마다 다름', '기본 제공']),
+        note: '※ 위 내용은 자사 기준 비교이며, 제품별로 차이가 있을 수 있습니다.'
+      },
+
+      faq: cat.faq,
+      cta: pick(tone.ctas, v + 2),
+      ctaSub: hasSale
+        ? `정가 ${won(price)} → ${won(sale)} (${percent}% 할인)`
+        : (price ? won(price) : '')
+    };
+  }
+
+  return { generate, CATEGORY, TONE, won, josa };
+})();
