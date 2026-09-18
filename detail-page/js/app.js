@@ -434,7 +434,25 @@
   }
 
   /* ---------------- 예시 데이터 ---------------- */
+  // build.js 로 만든 '내 제품 전용 파일'에는 window.PRESET 이 들어있다
+  function applyPreset(src) {
+    const base = blank();
+    state = Object.assign(base, JSON.parse(JSON.stringify(src)));
+    state.shipping = Object.assign(base.shipping, src.shipping || {});
+    state.hff = Object.assign(base.hff, src.hff || {});
+    state.images = { main: '', details: [] };
+    if (!Array.isArray(state.hff.ingredients) || !state.hff.ingredients.length) {
+      state.hff.ingredients = [{ name: '', amount: '' }];
+    }
+    fillForm(); render();
+  }
+
   function sample() {
+    if (window.PRESET) {
+      applyPreset(window.PRESET);
+      toast('저장된 내 제품 정보를 다시 불러왔습니다');
+      return;
+    }
     state = Object.assign(blank(), {
       category: 'hff', tone: 'trust',
       brand: '몽글랩', name: '밀크씨슬 간건강 30포',
@@ -503,6 +521,7 @@
       toast('예시 문구를 넣었습니다. 내 제품 표시사항과 같은지 꼭 확인하세요');
     };
 
+    if (window.PRESET) $('#btnSample').textContent = '내 제품 정보 되돌리기';
     $('#btnSample').onclick = sample;
     $('#btnRecopy').onclick = () => { state.variant = (state.variant || 0) + 1; render(); toast('다른 문구로 바꿨습니다'); };
     $('#btnCopy').onclick = copyHtml;
@@ -516,7 +535,7 @@
 
     window.addEventListener('resize', fitViewport);
     render();
-    if (!state.name) sample();   // 처음 열었을 때 빈 화면 대신 예시를 보여줍니다
+    if (!state.name) sample();   // 처음 열었을 때 빈 화면 대신 내 제품(또는 예시)을 보여줍니다
   }
 
   document.addEventListener('DOMContentLoaded', init);

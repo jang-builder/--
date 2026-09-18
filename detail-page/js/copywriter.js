@@ -169,7 +169,10 @@ const COPY = (() => {
   const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
 
   // 받침 유무에 맞춰 조사를 골라준다. josa('소고기무국','을') → '을'
-  const JOSA = { '을': ['을', '를'], '이': ['이', '가'], '은': ['은', '는'], '과': ['과', '와'], '으로': ['으로', '로'] };
+  const JOSA = {
+    '을': ['을', '를'], '이': ['이', '가'], '은': ['은', '는'], '과': ['과', '와'],
+    '으로': ['으로', '로'], '이라면': ['이라면', '라면']
+  };
   const DIGIT_BATCHIM = { '0': 1, '1': 1, '3': 1, '6': 1, '7': 1, '8': 1, '2': 0, '4': 0, '5': 0, '9': 0 };
   function josa(word, kind) {
     const pair = JOSA[kind] || JOSA['을'];
@@ -241,7 +244,7 @@ const COPY = (() => {
 
       // 이런 분께 추천
       recommend: [
-        `${vars.target}${josa(vars.target, '이')}라면 특히 잘 맞습니다`,
+        `${vars.target}${josa(vars.target, '이라면')} 특히 잘 맞습니다`,
         ...cat.recos
       ],
 
