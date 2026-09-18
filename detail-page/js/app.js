@@ -206,7 +206,11 @@
 
   function setupImages() {
     setupDrop('#dropMain', false, data => { state.images.main = data; drawThumbs(); render(); });
-    setupDrop('#dropDetail', true, data => { state.images.details.push(data); drawThumbs(); render(); });
+    setupDrop('#dropDetail', true, data => {
+      if (!state.images.main) state.images.main = data;   // 대표 사진이 비어 있으면 첫 장을 대표로
+      else state.images.details.push(data);
+      drawThumbs(); render();
+    });
     document.addEventListener('click', e => {
       const b = e.target.closest('[data-img]');
       if (!b) return;
@@ -222,7 +226,7 @@
   function render() {
     const copy = COPY.generate(state);
     lastCopy = copy;
-    $('#paper').innerHTML = RENDER.body(state, copy);
+    $('#paper').innerHTML = RENDER.body(state, copy, { preview: true });
     $('#chipTone').textContent = `${copy.categoryLabel} · ${copy.toneLabel}`;
     runGuard(copy);
     fitViewport();
