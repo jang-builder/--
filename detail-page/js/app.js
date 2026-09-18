@@ -10,7 +10,7 @@
 
   /* ---------------- 상태 ---------------- */
   const blank = () => ({
-    category: 'food', tone: 'trust',
+    category: 'hff', tone: 'trust',
     brand: '', name: '', target: '',
     price: '', salePrice: '',
     color: '#FF5A3C', ctaText: '구매하러 가기',
@@ -20,6 +20,10 @@
     reviews: [],
     faq: [],
     shipping: { fee: '', period: '', exchange: '', contact: '' },
+    hff: {
+      claim: '', claimSub: '', ingredients: [{ name: '', amount: '' }],
+      intake: '', caution: '', allergy: '', reportNo: '', reviewNo: ''
+    },
     images: { main: '', details: [] },
     sections: {}
   });
@@ -53,6 +57,14 @@
       ],
       make: () => ({ star: 5, txt: '', who: '' })
     },
+    'hff.ingredients': {
+      box: '#repHffIngredients', label: '원료',
+      fields: [
+        { k: 'name', ph: '원료명 (예: 밀크씨슬 추출물)', type: 'text' },
+        { k: 'amount', ph: '1일 섭취량당 함량 (예: 130mg)', type: 'text' }
+      ],
+      make: () => ({ name: '', amount: '' })
+    },
     faq: {
       box: '#repFaq', label: '질문',
       fields: [
@@ -84,6 +96,9 @@
     $('#swatches').innerHTML = ['#FF5A3C', '#4FB6A0', '#3D6DFF', '#111827', '#C4568B', '#E8A33D']
       .map(c => `<button type="button" style="background:${c}" data-color="${c}" title="${c}"></button>`).join('');
 
+    $('#selClaim').innerHTML = '<option value="">예시 불러오기 (원료 선택)</option>' +
+      GUARD.CLAIMS.map(([n, t]) => `<option value="${RENDER.esc(t)}">${RENDER.esc(n)}</option>`).join('');
+
     $('#toggles').innerHTML = RENDER.ORDER.map(k =>
       `<label><input type="checkbox" data-section="${k}" checked><span>${RENDER.LABELS[k]}</span></label>`
     ).join('');
@@ -91,7 +106,7 @@
 
   function buildRepeater(name) {
     const cfg = REPEATERS[name];
-    const list = state[name] || [];
+    const list = getPath(state, name) || [];
     $(cfg.box).innerHTML = list.map((item, i) => `
       <div class="rep-item">
         <div class="rep-head">
@@ -128,7 +143,7 @@
         setPath(state, el.dataset.bind, el.value);
         render();
       } else if (el.dataset.rep) {
-        state[el.dataset.rep][+el.dataset.idx][el.dataset.key] = el.value;
+        getPath(state, el.dataset.rep)[+el.dataset.idx][el.dataset.key] = el.value;
         render();
       }
     });
@@ -144,10 +159,10 @@
       const t = e.target.closest('[data-add],[data-del],[data-color]');
       if (!t) return;
       if (t.dataset.add) {
-        state[t.dataset.add].push(REPEATERS[t.dataset.add].make());
+        getPath(state, t.dataset.add).push(REPEATERS[t.dataset.add].make());
         buildRepeater(t.dataset.add); render();
       } else if (t.dataset.del) {
-        state[t.dataset.del].splice(+t.dataset.idx, 1);
+        getPath(state, t.dataset.del).splice(+t.dataset.idx, 1);
         buildRepeater(t.dataset.del); render();
       } else if (t.dataset.color) {
         state.color = t.dataset.color;
@@ -209,8 +224,52 @@
     lastCopy = copy;
     $('#paper').innerHTML = RENDER.body(state, copy);
     $('#chipTone').textContent = `${copy.categoryLabel} · ${copy.toneLabel}`;
+    runGuard(copy);
     fitViewport();
     save();
+  }
+
+  // 입력한 글과 자동 생성된 문구를 함께 검사한다
+  function collectTexts(copy) {
+    const h = state.hff || {};
+    const items = [
+      { label: '상품명', text: state.name },
+      { label: '브랜드', text: state.brand },
+      { label: '주요 고객', text: state.target },
+      { label: '버튼 문구', text: state.ctaText },
+      { label: '기능성 문구', text: h.claim, official: true },   // 공식 문구는 검사 제외
+      { label: '보조 설명', text: h.claimSub },
+      { label: '섭취 방법', text: h.intake },
+      { label: '주의사항', text: h.caution, official: true },
+      { label: '자동 생성 문구', text: [copy.headline, copy.sub, copy.cta, copy.painClose].join(' ') }
+    ];
+    (state.features || []).forEach((f, i) => {
+      items.push({ label: `특징 ${i + 1}`, text: [f.title, f.desc].join(' ') });
+    });
+    (state.reviews || []).forEach((r, i) => items.push({ label: `후기 ${i + 1}`, text: r.txt }));
+    (state.faq || []).forEach((f, i) => items.push({ label: `질문 ${i + 1}`, text: [f.q, f.a].join(' ') }));
+    (state.specs || []).forEach((sp, i) => items.push({ label: `상품정보 ${i + 1}`, text: sp.v }));
+    return items;
+  }
+
+  function runGuard(copy) {
+    const res = GUARD.scan(collectTexts(copy));
+    const sum = $('#guardSum'), box = $('#guardList'), chip = $('#chipGuard');
+    const clean = res.ban === 0 && res.warn === 0;
+
+    sum.textContent = clean ? '문제 없음' : `금지 ${res.ban} · 주의 ${res.warn}`;
+    sum.className = 'guard-sum ' + (res.ban ? 'bad' : 'ok');
+    chip.textContent = clean ? '광고 문구 이상 없음' : `⚠ 금지 ${res.ban} · 주의 ${res.warn}`;
+    chip.className = 'chip' + (res.ban ? ' bad' : '');
+
+    box.innerHTML = clean
+      ? '<div class="guard-empty">걸릴 만한 표현이 발견되지 않았습니다. (최종 책임은 판매자에게 있습니다)</div>'
+      : res.list.sort((a, b) => (a.level === b.level ? 0 : a.level === 'ban' ? -1 : 1)).map(f => `
+          <div class="guard-item ${f.level}">
+            <span class="w ${f.level}">${f.level === 'ban' ? '금지' : '주의'} · “${RENDER.esc(f.word)}”</span>
+            <span class="where"> — ${RENDER.esc(f.where)}</span>
+            <span class="fix">${RENDER.esc(f.why)} ${RENDER.esc(f.fix)}</span>
+          </div>`).join('');
   }
 
   function fitViewport() {
@@ -239,6 +298,10 @@
       const saved = JSON.parse(raw);
       state = Object.assign(blank(), saved, { images: { main: '', details: [] } });
       state.shipping = Object.assign({ fee: '', period: '', exchange: '', contact: '' }, saved.shipping || {});
+      state.hff = Object.assign(blank().hff, saved.hff || {});
+      if (!Array.isArray(state.hff.ingredients) || !state.hff.ingredients.length) {
+        state.hff.ingredients = [{ name: '', amount: '' }];
+      }
       return true;
     } catch (e) { return false; }
   }
@@ -373,36 +436,49 @@
   /* ---------------- 예시 데이터 ---------------- */
   function sample() {
     state = Object.assign(blank(), {
-      category: 'food', tone: 'trust',
-      brand: '몽글푸드', name: '집밥 한상 소고기무국',
-      target: '혼자 사는 30대 직장인',
-      price: '19800', salePrice: '14800',
-      color: '#FF5A3C', ctaText: '오늘의 한 끼 주문하기',
+      category: 'hff', tone: 'trust',
+      brand: '몽글랩', name: '밀크씨슬 간건강 30포',
+      target: '회식 잦은 40대 직장인',
+      price: '39000', salePrice: '29000',
+      color: '#2F8F5B', ctaText: '한 달분 시작하기',
       features: [
-        { title: '국내산 한우 양지 25% 이상', desc: '' },
-        { title: '끓이지 않고 3분 데우기만', desc: '봉지째 뜨거운 물에 3분, 설거지도 냄비 하나 없이 끝납니다.' },
-        { title: '나트륨 30% 낮춘 저염 레시피', desc: '' },
-        { title: '1인분씩 소분 진공 포장', desc: '' }
+        { title: '1포에 실리마린 130mg', desc: '' },
+        { title: '물 없이 넘기는 스틱형 분말', desc: '가방에 넣고 다니다 생각날 때 바로 털어 넣으면 됩니다.' },
+        { title: 'GMP 인증 시설에서 국내 생산', desc: '' },
+        { title: '합성감미료·착색료 무첨가', desc: '' }
       ],
+      hff: {
+        claim: '간 건강에 도움을 줄 수 있음',
+        claimSub: '1일 섭취량 1포에 기능성 원료 밀크씨슬 추출물 130mg 함유',
+        ingredients: [
+          { name: '밀크씨슬 추출물(실리마린)', amount: '130mg' },
+          { name: '비타민B1(티아민)', amount: '1.2mg' },
+          { name: '아연', amount: '8.5mg' }
+        ],
+        intake: '1일 1회, 1회 1포를 충분한 물과 함께 섭취하세요.\n정해진 시간에 드시면 거르지 않고 챙기기 좋습니다.',
+        caution: '임산부·수유부, 어린이는 섭취에 주의하세요.\n의약품 복용 중이거나 알레르기 체질인 분은 전문가와 상담 후 섭취하세요.\n이상사례 발생 시 섭취를 중단하고 전문가와 상담하십시오.',
+        allergy: '대두 함유',
+        reportNo: '20250000000000',
+        reviewNo: ''
+      },
       specs: [
-        { k: '중량', v: '500g × 2팩 (1팩 1인분)' },
-        { k: '보관방법', v: '냉동 보관 (-18℃ 이하)' },
-        { k: '원산지', v: '소고기: 국산 / 무: 국산' },
-        { k: '조리방법', v: '중탕 3분 또는 전자레인지 2분 30초' }
+        { k: '내용량', v: '2g × 30포 (30일분)' },
+        { k: '제품 형태', v: '스틱형 분말' },
+        { k: '보관방법', v: '직사광선을 피해 서늘한 곳에 보관' },
+        { k: '제조원', v: '국내 GMP 인증 제조시설' }
       ],
       reviews: [
-        { star: 5, txt: '자취 3년 만에 제대로 된 국 먹어봤어요. 고기가 진짜 들어있습니다.', who: '김O진 님' },
-        { star: 5, txt: '엄마가 끓여준 맛이랑 비슷해서 재구매했어요.', who: '이O영 님' }
+        { star: 5, txt: '물 없이 털어 넣는 게 편해서 한 달 동안 한 번도 안 거르고 먹었어요.', who: '박O수 님' }
       ],
       shipping: {
         fee: '3,000원 (3만원 이상 무료배송)',
         period: '오후 2시 이전 결제 시 당일 출고',
-        exchange: '냉동식품 특성상 단순 변심 반품은 어렵습니다 (배송 사고는 전액 보상)',
-        contact: '상품 문의 게시판 또는 카카오채널 @몽글푸드'
+        exchange: '미개봉 상품에 한해 수령 후 7일 이내 교환·반품 가능',
+        contact: '상품 문의 게시판 또는 카카오채널'
       }
     });
     fillForm(); render();
-    toast('예시를 채웠습니다. 내용만 바꿔 쓰세요');
+    toast('건강기능식품 예시를 채웠습니다. 내용만 바꿔 쓰세요');
   }
 
   /* ---------------- 시작 ---------------- */
@@ -417,6 +493,15 @@
     fillForm();
     bindEvents();
     setupImages();
+
+    $('#selClaim').onchange = e => {
+      if (!e.target.value) return;
+      state.hff.claim = e.target.value;
+      $('[data-bind="hff.claim"]').value = e.target.value;
+      e.target.value = '';
+      render();
+      toast('예시 문구를 넣었습니다. 내 제품 표시사항과 같은지 꼭 확인하세요');
+    };
 
     $('#btnSample').onclick = sample;
     $('#btnRecopy').onclick = () => { state.variant = (state.variant || 0) + 1; render(); toast('다른 문구로 바꿨습니다'); };

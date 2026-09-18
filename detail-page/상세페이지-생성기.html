@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>상세페이지 자동 생성기 | 스마트스토어·쿠팡용</title>
+<title>건강기능식품 상세페이지 자동 생성기</title>
 <!-- 파일 1개 버전: 이 파일만 있으면 어디서든 열립니다. 수정은 detail-page/ 원본에서 하고 node detail-page/build.js 로 다시 만드세요. -->
 <meta name="description" content="상품 정보만 입력하면 판매 문구까지 자동으로 작성되는 860px 상세페이지 생성기">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -149,13 +149,41 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   .stage{width:100%; height:auto;}
 }
 
+/* ===== 광고 문구 위험 검사 ===== */
+.guard{border-bottom:1px solid var(--line); padding:14px 20px 16px; background:#FBFCFD;}
+.guard-head{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.guard-head b{font-size:14px;}
+.guard-sum{margin-left:auto; font-size:12.5px; font-weight:800; padding:4px 10px; border-radius:100px;}
+.guard-sum.ok{background:rgba(0,178,107,.12); color:#00875A;}
+.guard-sum.bad{background:rgba(214,63,69,.12); color:#C0454A;}
+.guard-list{display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;}
+.guard-item{
+  border-radius:8px; padding:9px 11px; font-size:12.5px; line-height:1.55;
+  border-left:3px solid transparent; background:#fff; border:1px solid var(--line);
+}
+.guard-item.ban{border-left-color:#D63F45; background:#FFF6F6;}
+.guard-item.warn{border-left-color:#E8A33D; background:#FFFBF3;}
+.guard-item .w{font-weight:800;}
+.guard-item .w.ban{color:#C0454A;}
+.guard-item .w.warn{color:#B67A1E;}
+.guard-item .where{color:var(--gray);}
+.guard-item .fix{display:block; color:#41474D; margin-top:3px;}
+.guard-empty{font-size:12.5px; color:var(--gray); padding:4px 2px;}
+
+.tag-hff{
+  background:rgba(61,109,255,.12); color:var(--point); font-size:11px; font-weight:800;
+  padding:2px 7px; border-radius:100px; margin-left:4px;
+}
+.field .hint.danger{color:#C0454A;}
+.chip.bad{background:#FFF1F1; border-color:#F4C7C7; color:#C0454A;}
+
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <h1>상세페이지 자동 생성기
-    <small>스마트스토어 · 쿠팡용 860px / 판매 문구 자동 작성</small>
+    <small>건강기능식품 특화 · 스마트스토어/쿠팡 860px · 부당광고 표현 자동 검사</small>
   </h1>
   <button class="btn" id="btnSample">예시로 채우기</button>
   <button class="btn" id="btnRecopy">🔁 문구 다시 뽑기</button>
@@ -168,6 +196,14 @@ input,select,textarea{font-family:inherit; font-size:14px;}
 <div class="wrap">
   <!-- ================= 입력 패널 ================= -->
   <div class="panel" id="panel">
+
+    <div class="guard" id="guard">
+      <div class="guard-head">
+        <b>광고 문구 위험 검사</b>
+        <span class="guard-sum" id="guardSum">검사 중…</span>
+      </div>
+      <div class="guard-list" id="guardList"></div>
+    </div>
 
     <details class="group" open>
       <summary>1. 기본 정보</summary>
@@ -218,8 +254,51 @@ input,select,textarea{font-family:inherit; font-size:14px;}
       </div>
     </details>
 
+    <details class="group" open id="grpHff">
+      <summary>2. 기능성 · 원료 정보 <span class="tag-hff">건기식</span></summary>
+      <div class="body">
+        <div class="field">
+          <label>기능성 내용 <span class="hint">— 제품 표시사항에 적힌 문구를 그대로 복사하세요</span></label>
+          <select id="selClaim"><option value="">예시 불러오기 (원료 선택)</option></select>
+          <textarea data-bind="hff.claim" placeholder="예: 간 건강에 도움을 줄 수 있음" style="margin-top:8px"></textarea>
+          <span class="hint">※ 문구를 바꿔 쓰면 부당광고가 됩니다. 토씨까지 그대로 두세요.</span>
+        </div>
+        <div class="field">
+          <label>보조 설명 <span class="hint">— 선택</span></label>
+          <input type="text" data-bind="hff.claimSub" placeholder="예: 1일 섭취량 1포에 실리마린 130mg">
+        </div>
+        <div class="field">
+          <label>기능성 원료 · 함량</label>
+          <div id="repHffIngredients"></div>
+          <button class="add-btn" data-add="hff.ingredients">+ 원료 추가</button>
+        </div>
+        <div class="field">
+          <label>1일 섭취량 · 섭취 방법</label>
+          <textarea data-bind="hff.intake" placeholder="예: 1일 1회, 1회 1포를 충분한 물과 함께 섭취하세요."></textarea>
+        </div>
+        <div class="field">
+          <label>섭취 시 주의사항</label>
+          <textarea data-bind="hff.caution" placeholder="예: 임산부·수유부, 의약품 복용 중인 분은 전문가와 상담 후 섭취하세요."></textarea>
+        </div>
+        <div class="field">
+          <label>알레르기 유발 원료</label>
+          <input type="text" data-bind="hff.allergy" placeholder="예: 대두, 우유 함유">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>품목제조신고번호</label>
+            <input type="text" data-bind="hff.reportNo" placeholder="예: 20250000000000">
+          </div>
+          <div class="field">
+            <label>심의필 번호 <span class="hint">— 사전 심의 시</span></label>
+            <input type="text" data-bind="hff.reviewNo" placeholder="예: 제2025-0000호">
+          </div>
+        </div>
+      </div>
+    </details>
+
     <details class="group" open>
-      <summary>2. 핵심 특징 (→ 혜택 문구 자동 변환)</summary>
+      <summary>3. 핵심 특징 (→ 혜택 문구 자동 변환)</summary>
       <div class="body">
         <div class="field">
           <span class="hint">특징 제목만 적으면 판매 문구는 자동으로 붙습니다. 3~5개를 권장해요.</span>
@@ -230,7 +309,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
     </details>
 
     <details class="group">
-      <summary>3. 이미지</summary>
+      <summary>4. 이미지</summary>
       <div class="body">
         <div class="field">
           <label>메인(대표) 이미지</label>
@@ -246,7 +325,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
     </details>
 
     <details class="group">
-      <summary>4. 상품 정보 (스펙 표)</summary>
+      <summary>5. 상품 정보 (스펙 표)</summary>
       <div class="body">
         <div id="repSpecs"></div>
         <button class="add-btn" data-add="specs">+ 항목 추가</button>
@@ -254,16 +333,16 @@ input,select,textarea{font-family:inherit; font-size:14px;}
     </details>
 
     <details class="group">
-      <summary>5. 후기</summary>
+      <summary>6. 후기</summary>
       <div class="body">
-        <div class="field"><span class="hint">실제 받은 후기만 넣어 주세요. 지어낸 후기는 법적으로 문제가 됩니다.</span></div>
+        <div class="field"><span class="hint danger">실제 받은 후기만 넣으세요. 건강기능식품은 “먹고 나았어요” 같은 체험기도 질병 치료 표방으로 처벌됩니다.</span></div>
         <div id="repReviews"></div>
         <button class="add-btn" data-add="reviews">+ 후기 추가</button>
       </div>
     </details>
 
     <details class="group">
-      <summary>6. 자주 묻는 질문 (직접 추가)</summary>
+      <summary>7. 자주 묻는 질문 (직접 추가)</summary>
       <div class="body">
         <div class="field"><span class="hint">비워두면 업종별 기본 질문 3개가 자동으로 들어갑니다.</span></div>
         <div id="repFaq"></div>
@@ -272,7 +351,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
     </details>
 
     <details class="group">
-      <summary>7. 배송 · 교환 안내</summary>
+      <summary>8. 배송 · 교환 안내</summary>
       <div class="body">
         <div class="field"><label>배송비</label><input type="text" data-bind="shipping.fee" placeholder="3,000원 (5만원 이상 무료배송)"></div>
         <div class="field"><label>배송 기간</label><input type="text" data-bind="shipping.period" placeholder="결제 후 영업일 기준 1~3일 이내 출고"></div>
@@ -282,7 +361,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
     </details>
 
     <details class="group">
-      <summary>8. 넣을 섹션 고르기</summary>
+      <summary>9. 넣을 섹션 고르기</summary>
       <div class="body">
         <div class="toggles" id="toggles"></div>
       </div>
@@ -295,6 +374,7 @@ input,select,textarea{font-family:inherit; font-size:14px;}
       <span class="chip">가로 860px 고정</span>
       <span class="chip" id="chipHeight">높이 계산 중…</span>
       <span class="chip" id="chipTone">—</span>
+      <span class="chip" id="chipGuard">—</span>
       <span style="margin-left:auto">화면에 맞춰 축소해 보여드립니다 (저장은 원본 크기)</span>
     </div>
     <div class="viewport-outer" id="viewportOuter">
@@ -319,6 +399,35 @@ const COPY = (() => {
 
   /* ---------- 카테고리별 재료 ---------- */
   const CATEGORY = {
+    hff: {
+      label: '건강기능식품 (식약처 인정)',
+      regulated: true,
+      pains: ['챙겨 먹어야지 하면서 매번 놓치고', '성분표를 봐도 뭐가 뭔지 모르겠고', '광고는 화려한데 원료 함량은 안 보이고'],
+      wish: '매일 거르지 않고 챙기는 습관',
+      trustWords: ['GMP 인증 시설 생산', '기능성 원료 함량 전량 공개', '식약처 신고 완료'],
+      faq: [
+        ['언제 섭취하면 좋나요?', '하루 섭취량을 정해진 시간에 드시는 것이 가장 좋습니다. 자세한 섭취 방법은 아래 안내를 확인해 주세요.'],
+        ['얼마나 섭취해야 하나요?', '표시된 1일 섭취량을 지켜 주세요. 많이 드신다고 더 좋은 것은 아닙니다.'],
+        ['약을 먹고 있는데 같이 섭취해도 되나요?', '복용 중인 약이 있거나 임신·수유 중이시라면 반드시 의사·약사와 상담 후 섭취해 주세요.'],
+        ['알레르기가 있어도 괜찮나요?', '아래 원료 표와 알레르기 유발 원료 표시를 먼저 확인해 주세요.']
+      ],
+      recos: ['매일 챙겨 먹는 습관을 만들고 싶은 분', '원료명과 함량을 직접 확인하고 고르는 분', '가족이 함께 먹을 제품을 찾는 분'],
+      unit: '한 통'
+    },
+    hfood: {
+      label: '건강식품 · 일반식품',
+      regulated: true,
+      pains: ['몸에 좋다는 건 많은데 뭘 골라야 할지 모르겠고', '먹기 번거로우면 결국 안 먹게 되고', '원산지도 함량도 안 적혀 있고'],
+      wish: '부담 없이 매일 챙기는 한 잔, 한 포',
+      trustWords: ['HACCP 인증 시설 생산', '원산지 전 성분 공개', '무첨가 제조'],
+      faq: [
+        ['하루에 얼마나 먹으면 되나요?', '포장에 표시된 1회 섭취량을 참고해 주세요. 식품이라 정해진 복용법은 없습니다.'],
+        ['보관은 어떻게 하나요?', '직사광선을 피해 서늘한 곳에 보관하시고, 개봉 후에는 밀봉해 주세요.'],
+        ['아이도 먹을 수 있나요?', '연령 제한은 없지만, 어린이·임산부는 섭취 전 전문가와 상담하시길 권해드립니다.']
+      ],
+      recos: ['챙겨 먹기 편한 형태를 찾는 분', '원산지와 성분을 보고 고르는 분', '온 가족이 같이 먹을 걸 찾는 분'],
+      unit: '한 박스'
+    },
     food: {
       label: '음식 · 식품',
       pains: ['집에서 해 먹자니 손질부터가 일이고', '사 먹자니 가격도, 위생도 신경 쓰이고', '맛있다 싶으면 꼭 자극적이고'],
@@ -371,17 +480,17 @@ const COPY = (() => {
       recos: ['싼 걸 샀다가 금방 바꾼 경험이 있는 분', '집안일에 드는 시간을 줄이고 싶은 분', '한 번 사서 오래 쓰고 싶은 분'],
       unit: '한 세트'
     },
-    health: {
-      label: '건강 · 반려동물',
-      pains: ['꾸준히 챙겨 먹는 게 제일 어렵고', '성분표를 봐도 뭐가 좋은지 모르겠고', '효과는 모르겠는데 돈은 계속 나가고'],
-      wish: '매일 챙기기 쉬운, 믿을 수 있는 관리 습관',
-      trustWords: ['식약처 신고 완료', '원료 원산지 공개', '무첨가 제조'],
+    pet: {
+      label: '반려동물 용품 · 사료',
+      pains: ['우리 아이 입맛에 맞을지 몰라 사기가 망설여지고', '성분표를 봐도 뭐가 좋은지 모르겠고', '좋다는 건 많은데 기준이 없고'],
+      wish: '우리 아이가 잘 먹고, 보호자도 마음 놓이는 선택',
+      trustWords: ['원료 원산지 공개', '무첨가 제조', '수의사 자문 레시피'],
       faq: [
-        ['언제 먹이면(먹으면) 좋나요?', '하루 1회, 식후에 드시는 걸 권장합니다. 정해진 시간에 드시면 잊지 않고 챙기기 좋아요.'],
-        ['얼마나 먹어야 효과를 보나요?', '개인차가 있지만 최소 4주 이상 꾸준히 섭취하시길 권해드립니다.'],
-        ['다른 제품과 같이 먹어도 되나요?', '일반적으로 병행이 가능하지만, 복용 중인 약이 있다면 전문가와 상담해 주세요.']
+        ['하루에 얼마나 급여하나요?', '아래 급여량 표를 체중 기준으로 확인해 주세요.'],
+        ['기존 사료와 섞여도 되나요?', '처음에는 기존 사료와 섞어 일주일에 걸쳐 천천히 바꿔 주세요.'],
+        ['보관은 어떻게 하나요?', '개봉 후에는 밀봉해 서늘한 곳에 보관해 주세요.']
       ],
-      recos: ['챙겨 먹어야지 하면서 매번 놓치는 분', '성분을 꼼꼼히 보고 고르는 분', '가족을 위해 믿을 만한 걸 찾는 분'],
+      recos: ['우리 아이 먹는 것만큼은 따지는 보호자', '성분을 꼼꼼히 보고 고르는 분', '급여량까지 안내받고 싶은 분'],
       unit: '한 박스'
     },
     service: {
@@ -564,6 +673,138 @@ const COPY = (() => {
 </script>
 <script>
 /* ============================================================
+   health-guard.js
+   건강기능식품 · 건강식품 상세페이지용 안전장치
+   1) 부당광고로 걸리기 쉬운 표현을 실시간으로 잡아낸다
+   2) 식약처 인정 기능성 문구 예시를 불러온다
+   근거: 건강기능식품법 제18조(부당한 표시·광고 금지),
+        식품표시광고법 제8조 — 자세한 판단은 반드시 심의기관 확인
+   ============================================================ */
+
+const GUARD = (() => {
+
+  /* ---------- 1. 걸리는 표현 사전 ---------- */
+  // level: 'ban'  = 쓰면 거의 확실히 문제가 되는 표현
+  //        'warn' = 근거가 없으면 문제가 되는 표현
+  const RULES = [
+    // --- 질병의 예방·치료를 표방 (가장 많이 적발되는 유형) ---
+    { level: 'ban', words: ['치료', '치유', '완치', '낫는다', '낫게', '고친다', '회복시켜', '특효'],
+      why: '질병 치료 효과를 표방하는 표현입니다(의약품 오인).', fix: '“…에 도움을 줄 수 있음”(인정 기능성 문구)까지만 쓰세요.' },
+    { level: 'ban', words: ['예방', '항암', '항염', '해독', '디톡스', '살균', '멸균 효과'],
+      why: '질병 예방·의학적 작용을 표방하는 표현입니다.', fix: '표현을 삭제하고 원료명과 함량 사실만 남기세요.' },
+    { level: 'ban', words: ['암', '당뇨', '고혈압', '아토피', '관절염', '탈모', '치매', '갱년기 장애', '변비', '위염', '간염', '불면증', '우울증', '코로나'],
+      why: '특정 질병명을 언급하면 질병 치료 표방으로 봅니다.', fix: '질병명을 빼고 “눈·간·장 건강” 같은 기능성 표현으로 바꾸세요.' },
+
+    // --- 의약품·의학적 근거 오인 ---
+    { level: 'ban', words: ['의약품', '처방', '약처럼', '임상적으로 입증', '의학적으로 입증', '병원에서 추천', '의사가 처방'],
+      why: '의약품으로 오인하게 하는 표현입니다.', fix: '“건강기능식품입니다”라는 사실만 쓰세요.' },
+    { level: 'ban', words: ['부작용 없는', '부작용이 없', '무해한', '평생 먹어도'],
+      why: '안전성을 단정하는 표현은 금지됩니다.', fix: '“섭취 시 주의사항”을 성실히 표시하는 쪽이 신뢰를 줍니다.' },
+
+    // --- 절대적·최상급 표현 ---
+    { level: 'ban', words: ['100%', '최고', '최상', '유일한', '완벽한', '즉효', '보장', '확실한 효과', '무조건'],
+      why: '객관적 근거 없이 쓰면 과장광고로 봅니다.', fix: '“원료 함량 500mg”처럼 숫자 사실로 바꾸세요.' },
+    { level: 'warn', words: ['1위', '최초', '최저가', '국내 유일', '독보적'],
+      why: '순위·최상급은 출처와 기간을 함께 표시해야 합니다.', fix: '“2025년 자사몰 판매량 기준”처럼 근거를 붙이세요.' },
+
+    // --- 체중감량·체형 ---
+    { level: 'ban', words: ['살이 빠진', '살 빠지는', '체중 감량 보장', '굶지 않아도', '지방 분해', '붓기 제거'],
+      why: '체중 감량 효과를 단정하는 표현입니다.', fix: '체지방 관련은 인정받은 기능성 문구만 그대로 쓰세요.' },
+
+    // --- 근거가 있어야 하는 표현 ---
+    { level: 'warn', words: ['효능', '효과가', '개선', '강화', '증진', '촉진', '재생', '노화 방지', '안티에이징', '면역력'],
+      why: '식약처가 인정한 기능성 문구 안에서만 쓸 수 있습니다.', fix: '제품 표시사항의 기능성 문구를 그대로 복사해 쓰세요.' },
+    { level: 'warn', words: ['논문', '임상', '특허', '인증', '시험 결과', '연구 결과'],
+      // GMP·HACCP 같은 공인 인증 표기는 사실이므로 검사에서 빼둔다
+      skip: [/(GMP|HACCP|ISO|KC|FDA|유기농|친환경|무농약|할랄|안전)\s*인증/gi],
+      why: '자료를 보관하고 있어야 하며, 제품과 직접 관련이 있어야 합니다.', fix: '자료 출처(기관·연도)를 함께 적으세요.' },
+
+    // --- 수치·지표 표현 ---
+    { level: 'warn', words: ['혈압', '혈당', '콜레스테롤', '중성지질', '간 수치', '요산'],
+      why: '건강 지표에 대한 표현은 인정받은 기능성 문구 안에서만 쓸 수 있습니다.',
+      fix: '제품 표시사항의 문구를 그대로 쓰고, 임의로 바꾸지 마세요.' },
+
+    // --- 후기 관련 ---
+    { level: 'ban', words: ['먹고 나았', '먹고 좋아졌', '병원 안 가도', '약 끊었', '수치가 떨어졌'],
+      why: '체험기 형태의 질병 치료 표방도 동일하게 처벌됩니다.', fix: '이런 후기는 상세페이지에 싣지 마세요.' }
+  ];
+
+  /* ---------- 2. 식약처 인정 기능성 문구 예시 ---------- */
+  // ※ 반드시 '내 제품 표시사항'에 적힌 문구를 그대로 쓰세요. 아래는 형식 참고용입니다.
+  const CLAIMS = [
+    ['홍삼', '면역력 증진·피로개선에 도움을 줄 수 있음'],
+    ['프로바이오틱스', '유산균 증식 및 유해균 억제·배변활동 원활에 도움을 줄 수 있음'],
+    ['밀크씨슬(실리마린)', '간 건강에 도움을 줄 수 있음'],
+    ['루테인', '노화로 인해 감소될 수 있는 황반색소밀도를 유지시켜 눈 건강에 도움을 줄 수 있음'],
+    ['오메가-3(EPA·DHA)', '혈중 중성지질 개선·혈행 개선에 도움을 줄 수 있음'],
+    ['비타민C', '결합조직 형성과 기능 유지에 필요·유해산소로부터 세포를 보호하는 데 필요'],
+    ['비타민D', '칼슘과 인이 흡수되고 이용되는 데 필요·뼈의 형성과 유지에 필요'],
+    ['칼슘', '뼈의 형성과 유지에 필요·신경과 근육 기능 유지에 필요'],
+    ['마그네슘', '에너지 이용에 필요·신경과 근육 기능 유지에 필요'],
+    ['아연', '정상적인 면역기능에 필요·정상적인 세포분열에 필요'],
+    ['가르시니아캄보지아 추출물', '탄수화물이 지방으로 합성되는 것을 억제하여 체지방 감소에 도움을 줄 수 있음'],
+    ['저분자콜라겐펩타이드', '피부 보습에 도움을 줄 수 있음'],
+    ['쏘팔메토 열매 추출물', '전립선 건강 유지에 도움을 줄 수 있음'],
+    ['녹차추출물(카테킨)', '항산화에 도움을 줄 수 있음'],
+    ['프로폴리스추출물', '구강에서 항균작용을 하여 잇몸 건강에 도움을 줄 수 있음'],
+    ['알로에 전잎', '배변활동 원활에 도움을 줄 수 있음'],
+    ['감마리놀렌산', '혈행 개선에 도움을 줄 수 있음'],
+    ['글루코사민', '관절 및 연골 건강에 도움을 줄 수 있음'],
+    ['코엔자임Q10', '항산화·높은 혈압 감소에 도움을 줄 수 있음'],
+    ['헛개나무 열매 추출물', '간 건강에 도움을 줄 수 있음']
+  ];
+
+  /* ---------- 3. 의무 표시 문구 ---------- */
+  const NOTICE = {
+    hff: [
+      '본 제품은 건강기능식품이며, 질병의 예방 및 치료를 위한 의약품이 아닙니다.',
+      '본 제품은 식품의약품안전처로부터 기능성을 인정받은 원료를 사용하였습니다.',
+      '섭취 시 이상사례가 발생할 경우 섭취를 중단하고 전문가와 상담하십시오.'
+    ],
+    hfood: [
+      '본 제품은 일반식품이며, 질병의 예방 및 치료를 위한 의약품이 아닙니다.',
+      '특정 질환이 있거나 약을 복용 중이신 분은 섭취 전 전문가와 상담하십시오.'
+    ]
+  };
+
+  /* ---------- 4. 검사 ---------- */
+  // items: [{ label:'상품명', text:'...', official:true }]  official 필드는 검사에서 제외
+  function scan(items) {
+    const found = [];
+    (items || []).forEach(item => {
+      if (!item || !item.text || item.official) return;
+      const raw = String(item.text);
+      RULES.forEach(rule => {
+        // 예외로 둔 표현(GMP 인증 등)은 지운 뒤에 검사한다
+        let text = raw;
+        if (rule.skip) rule.skip.forEach(re => { text = text.replace(re, ' '); });
+        rule.words.forEach(w => {
+          if (text.indexOf(w) === -1) return;
+          found.push({ level: rule.level, word: w, where: item.label, why: rule.why, fix: rule.fix });
+        });
+      });
+    });
+    // 같은 단어가 여러 곳에 있으면 한 줄로 합친다
+    const merged = {};
+    found.forEach(f => {
+      const key = f.level + '|' + f.word;
+      if (merged[key]) { if (merged[key].where.indexOf(f.where) === -1) merged[key].where += ', ' + f.where; }
+      else merged[key] = Object.assign({}, f);
+    });
+    const list = Object.values(merged);
+    return {
+      list,
+      ban: list.filter(f => f.level === 'ban').length,
+      warn: list.filter(f => f.level === 'warn').length
+    };
+  }
+
+  return { scan, CLAIMS, NOTICE, RULES };
+})();
+
+</script>
+<script>
+/* ============================================================
    detail-style.js
    상세페이지(860px 고정폭) 전용 스타일.
    내보내기 HTML 안에 그대로 삽입해야 해서 파일이 아닌
@@ -692,7 +933,38 @@ const DETAIL_CSS = `
   font-size:23px; font-weight:800; padding:22px 60px; border-radius:100px;
 }
 .dp-foot{padding:30px 60px; text-align:center; font-size:15px; color:#8B9197;}
+/* ---- 건기식: 기능성 정보 ---- */
+.dp-func .claim{
+  border:2px solid var(--dp-main); border-radius:18px; padding:30px 34px; margin-top:30px; background:var(--dp-tint);
+}
+.dp-func .claim-label{
+  display:inline-block; background:var(--dp-main); color:#fff; font-size:15px; font-weight:800;
+  padding:6px 14px; border-radius:100px; margin-bottom:14px;
+}
+.dp-func .claim-text{font-size:24px; font-weight:800; line-height:1.5; color:#1F2328;}
+.dp-func .claim-sub{font-size:17px; color:#4A5157; margin-top:12px;}
+.dp-func table.ing{width:100%; border-collapse:collapse; margin-top:22px; font-size:18px;}
+.dp-func table.ing th{background:#F2F4F6; font-weight:800; padding:16px; border:1px solid #E4E7EA;}
+.dp-func table.ing td{padding:16px; border:1px solid #E4E7EA; text-align:center;}
+.dp-func table.ing td:first-child{text-align:left; font-weight:700;}
+
+/* ---- 건기식: 섭취방법 ---- */
+.dp-intake .two{display:flex; gap:16px; margin-top:28px;}
+.dp-intake .box{flex:1; background:#F7F8FA; border-radius:16px; padding:28px 30px;}
+.dp-intake .box.care{background:#FFF6F4; border:1px solid #FFD9CF;}
+.dp-intake .box h3{font-size:20px; margin-bottom:12px;}
+.dp-intake .box p{font-size:17px; line-height:1.7;}
+
+/* ---- 건기식: 의무 표시사항 ---- */
+.dp-legal{background:#F2F4F6; padding:44px 60px;}
+.dp-legal .legal-title{font-size:16px; font-weight:800; color:#41474D; margin-bottom:14px;}
+.dp-legal ul{list-style:none; padding:0; margin:0;}
+.dp-legal li{
+  font-size:15px; color:#6B7278; line-height:1.8; padding-left:16px; position:relative;
+}
+.dp-legal li:before{content:'·'; position:absolute; left:4px;}
 `;
+
 
 </script>
 <script>
@@ -762,6 +1034,51 @@ const RENDER = (() => {
         <div class="center"><span class="eyebrow">핵심 포인트</span></div>
         <h2 class="center">${esc(st.name)},\n여기에 가장 신경 썼습니다</h2>
         <div style="margin-top:34px">${cards}</div>
+      </section>`;
+    },
+
+    /* ---- 건강기능식품 전용 ---- */
+    func(st, c) {
+      const h = st.hff || {};
+      const ing = (h.ingredients || []).filter(i => i.name);
+      if (!h.claim && !ing.length) return '';
+      const rows = ing.map(i => `<tr><td>${esc(i.name)}</td><td>${esc(i.amount || '-')}</td></tr>`).join('');
+      return `<section class="dp-func">
+        <div class="center"><span class="eyebrow">${st.category === 'hff' ? '식약처 인정 기능성' : '원료 정보'}</span></div>
+        <h2 class="center">무엇이 들어있고,\n무엇에 도움이 되는지</h2>
+        ${h.claim ? `<div class="claim">
+          <div class="claim-label">기능성 내용</div>
+          <div class="claim-text">${nl(h.claim)}</div>
+          ${h.claimSub ? `<div class="claim-sub">${nl(h.claimSub)}</div>` : ''}
+        </div>` : ''}
+        ${rows ? `<table class="ing"><thead><tr><th>원료명</th><th>1일 섭취량당 함량</th></tr></thead>
+          <tbody>${rows}</tbody></table>` : ''}
+      </section>`;
+    },
+
+    intake(st) {
+      const h = st.hff || {};
+      if (!h.intake && !h.caution) return '';
+      return `<section class="dp-intake">
+        <h2 class="center">섭취 방법 · 주의사항</h2>
+        <div class="two">
+          ${h.intake ? `<div class="box"><h3>이렇게 드세요</h3><p>${nl(h.intake)}</p></div>` : ''}
+          ${h.caution ? `<div class="box care"><h3>이런 분은 주의하세요</h3><p>${nl(h.caution)}</p></div>` : ''}
+        </div>
+      </section>`;
+    },
+
+    legal(st) {
+      const h = st.hff || {};
+      const notices = (typeof GUARD !== 'undefined' && GUARD.NOTICE[st.category]) || [];
+      if (!notices.length && !h.allergy && !h.reviewNo && !h.reportNo) return '';
+      const lines = notices.slice();
+      if (h.allergy) lines.push(`알레르기 유발 원료: ${h.allergy}`);
+      if (h.reportNo) lines.push(`품목제조신고번호(또는 수입신고번호): ${h.reportNo}`);
+      if (h.reviewNo) lines.push(`심의필 번호: ${h.reviewNo}`);
+      return `<section class="dp-legal">
+        <div class="legal-title">표시사항 · 의무 안내</div>
+        <ul>${lines.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
       </section>`;
     },
 
@@ -855,13 +1172,14 @@ const RENDER = (() => {
     }
   };
 
-  const ORDER = ['hero', 'reco', 'pain', 'benefit', 'gallery', 'compare', 'spec', 'trust', 'review', 'faq', 'ship', 'cta'];
+  const ORDER = ['hero', 'reco', 'pain', 'func', 'benefit', 'gallery', 'intake', 'compare', 'spec', 'trust', 'review', 'faq', 'ship', 'legal', 'cta'];
 
   const LABELS = {
     hero: '1. 첫 화면(후킹)', reco: '2. 이런 분께 추천', pain: '3. 고민 공감',
-    benefit: '4. 핵심 혜택', gallery: '5. 상세 이미지', compare: '6. 비교표',
-    spec: '7. 상품 정보', trust: '8. 신뢰 배지', review: '9. 후기',
-    faq: '10. 자주 묻는 질문', ship: '11. 배송·교환', cta: '12. 마지막 구매 유도'
+    func: '4. 기능성·원료 정보 ★건기식', benefit: '5. 핵심 혜택', gallery: '6. 상세 이미지',
+    intake: '7. 섭취방법·주의사항 ★건기식', compare: '8. 비교표', spec: '9. 상품 정보',
+    trust: '10. 신뢰 배지', review: '11. 후기', faq: '12. 자주 묻는 질문',
+    ship: '13. 배송·교환', legal: '14. 의무 표시사항 ★건기식', cta: '15. 마지막 구매 유도'
   };
 
   /* ---------- 본문 조립 ---------- */
@@ -921,7 +1239,7 @@ ${body(state, copy)}
 
   /* ---------------- 상태 ---------------- */
   const blank = () => ({
-    category: 'food', tone: 'trust',
+    category: 'hff', tone: 'trust',
     brand: '', name: '', target: '',
     price: '', salePrice: '',
     color: '#FF5A3C', ctaText: '구매하러 가기',
@@ -931,6 +1249,10 @@ ${body(state, copy)}
     reviews: [],
     faq: [],
     shipping: { fee: '', period: '', exchange: '', contact: '' },
+    hff: {
+      claim: '', claimSub: '', ingredients: [{ name: '', amount: '' }],
+      intake: '', caution: '', allergy: '', reportNo: '', reviewNo: ''
+    },
     images: { main: '', details: [] },
     sections: {}
   });
@@ -964,6 +1286,14 @@ ${body(state, copy)}
       ],
       make: () => ({ star: 5, txt: '', who: '' })
     },
+    'hff.ingredients': {
+      box: '#repHffIngredients', label: '원료',
+      fields: [
+        { k: 'name', ph: '원료명 (예: 밀크씨슬 추출물)', type: 'text' },
+        { k: 'amount', ph: '1일 섭취량당 함량 (예: 130mg)', type: 'text' }
+      ],
+      make: () => ({ name: '', amount: '' })
+    },
     faq: {
       box: '#repFaq', label: '질문',
       fields: [
@@ -995,6 +1325,9 @@ ${body(state, copy)}
     $('#swatches').innerHTML = ['#FF5A3C', '#4FB6A0', '#3D6DFF', '#111827', '#C4568B', '#E8A33D']
       .map(c => `<button type="button" style="background:${c}" data-color="${c}" title="${c}"></button>`).join('');
 
+    $('#selClaim').innerHTML = '<option value="">예시 불러오기 (원료 선택)</option>' +
+      GUARD.CLAIMS.map(([n, t]) => `<option value="${RENDER.esc(t)}">${RENDER.esc(n)}</option>`).join('');
+
     $('#toggles').innerHTML = RENDER.ORDER.map(k =>
       `<label><input type="checkbox" data-section="${k}" checked><span>${RENDER.LABELS[k]}</span></label>`
     ).join('');
@@ -1002,7 +1335,7 @@ ${body(state, copy)}
 
   function buildRepeater(name) {
     const cfg = REPEATERS[name];
-    const list = state[name] || [];
+    const list = getPath(state, name) || [];
     $(cfg.box).innerHTML = list.map((item, i) => `
       <div class="rep-item">
         <div class="rep-head">
@@ -1039,7 +1372,7 @@ ${body(state, copy)}
         setPath(state, el.dataset.bind, el.value);
         render();
       } else if (el.dataset.rep) {
-        state[el.dataset.rep][+el.dataset.idx][el.dataset.key] = el.value;
+        getPath(state, el.dataset.rep)[+el.dataset.idx][el.dataset.key] = el.value;
         render();
       }
     });
@@ -1055,10 +1388,10 @@ ${body(state, copy)}
       const t = e.target.closest('[data-add],[data-del],[data-color]');
       if (!t) return;
       if (t.dataset.add) {
-        state[t.dataset.add].push(REPEATERS[t.dataset.add].make());
+        getPath(state, t.dataset.add).push(REPEATERS[t.dataset.add].make());
         buildRepeater(t.dataset.add); render();
       } else if (t.dataset.del) {
-        state[t.dataset.del].splice(+t.dataset.idx, 1);
+        getPath(state, t.dataset.del).splice(+t.dataset.idx, 1);
         buildRepeater(t.dataset.del); render();
       } else if (t.dataset.color) {
         state.color = t.dataset.color;
@@ -1120,8 +1453,52 @@ ${body(state, copy)}
     lastCopy = copy;
     $('#paper').innerHTML = RENDER.body(state, copy);
     $('#chipTone').textContent = `${copy.categoryLabel} · ${copy.toneLabel}`;
+    runGuard(copy);
     fitViewport();
     save();
+  }
+
+  // 입력한 글과 자동 생성된 문구를 함께 검사한다
+  function collectTexts(copy) {
+    const h = state.hff || {};
+    const items = [
+      { label: '상품명', text: state.name },
+      { label: '브랜드', text: state.brand },
+      { label: '주요 고객', text: state.target },
+      { label: '버튼 문구', text: state.ctaText },
+      { label: '기능성 문구', text: h.claim, official: true },   // 공식 문구는 검사 제외
+      { label: '보조 설명', text: h.claimSub },
+      { label: '섭취 방법', text: h.intake },
+      { label: '주의사항', text: h.caution, official: true },
+      { label: '자동 생성 문구', text: [copy.headline, copy.sub, copy.cta, copy.painClose].join(' ') }
+    ];
+    (state.features || []).forEach((f, i) => {
+      items.push({ label: `특징 ${i + 1}`, text: [f.title, f.desc].join(' ') });
+    });
+    (state.reviews || []).forEach((r, i) => items.push({ label: `후기 ${i + 1}`, text: r.txt }));
+    (state.faq || []).forEach((f, i) => items.push({ label: `질문 ${i + 1}`, text: [f.q, f.a].join(' ') }));
+    (state.specs || []).forEach((sp, i) => items.push({ label: `상품정보 ${i + 1}`, text: sp.v }));
+    return items;
+  }
+
+  function runGuard(copy) {
+    const res = GUARD.scan(collectTexts(copy));
+    const sum = $('#guardSum'), box = $('#guardList'), chip = $('#chipGuard');
+    const clean = res.ban === 0 && res.warn === 0;
+
+    sum.textContent = clean ? '문제 없음' : `금지 ${res.ban} · 주의 ${res.warn}`;
+    sum.className = 'guard-sum ' + (res.ban ? 'bad' : 'ok');
+    chip.textContent = clean ? '광고 문구 이상 없음' : `⚠ 금지 ${res.ban} · 주의 ${res.warn}`;
+    chip.className = 'chip' + (res.ban ? ' bad' : '');
+
+    box.innerHTML = clean
+      ? '<div class="guard-empty">걸릴 만한 표현이 발견되지 않았습니다. (최종 책임은 판매자에게 있습니다)</div>'
+      : res.list.sort((a, b) => (a.level === b.level ? 0 : a.level === 'ban' ? -1 : 1)).map(f => `
+          <div class="guard-item ${f.level}">
+            <span class="w ${f.level}">${f.level === 'ban' ? '금지' : '주의'} · “${RENDER.esc(f.word)}”</span>
+            <span class="where"> — ${RENDER.esc(f.where)}</span>
+            <span class="fix">${RENDER.esc(f.why)} ${RENDER.esc(f.fix)}</span>
+          </div>`).join('');
   }
 
   function fitViewport() {
@@ -1150,6 +1527,10 @@ ${body(state, copy)}
       const saved = JSON.parse(raw);
       state = Object.assign(blank(), saved, { images: { main: '', details: [] } });
       state.shipping = Object.assign({ fee: '', period: '', exchange: '', contact: '' }, saved.shipping || {});
+      state.hff = Object.assign(blank().hff, saved.hff || {});
+      if (!Array.isArray(state.hff.ingredients) || !state.hff.ingredients.length) {
+        state.hff.ingredients = [{ name: '', amount: '' }];
+      }
       return true;
     } catch (e) { return false; }
   }
@@ -1284,36 +1665,49 @@ ${body(state, copy)}
   /* ---------------- 예시 데이터 ---------------- */
   function sample() {
     state = Object.assign(blank(), {
-      category: 'food', tone: 'trust',
-      brand: '몽글푸드', name: '집밥 한상 소고기무국',
-      target: '혼자 사는 30대 직장인',
-      price: '19800', salePrice: '14800',
-      color: '#FF5A3C', ctaText: '오늘의 한 끼 주문하기',
+      category: 'hff', tone: 'trust',
+      brand: '몽글랩', name: '밀크씨슬 간건강 30포',
+      target: '회식 잦은 40대 직장인',
+      price: '39000', salePrice: '29000',
+      color: '#2F8F5B', ctaText: '한 달분 시작하기',
       features: [
-        { title: '국내산 한우 양지 25% 이상', desc: '' },
-        { title: '끓이지 않고 3분 데우기만', desc: '봉지째 뜨거운 물에 3분, 설거지도 냄비 하나 없이 끝납니다.' },
-        { title: '나트륨 30% 낮춘 저염 레시피', desc: '' },
-        { title: '1인분씩 소분 진공 포장', desc: '' }
+        { title: '1포에 실리마린 130mg', desc: '' },
+        { title: '물 없이 넘기는 스틱형 분말', desc: '가방에 넣고 다니다 생각날 때 바로 털어 넣으면 됩니다.' },
+        { title: 'GMP 인증 시설에서 국내 생산', desc: '' },
+        { title: '합성감미료·착색료 무첨가', desc: '' }
       ],
+      hff: {
+        claim: '간 건강에 도움을 줄 수 있음',
+        claimSub: '1일 섭취량 1포에 기능성 원료 밀크씨슬 추출물 130mg 함유',
+        ingredients: [
+          { name: '밀크씨슬 추출물(실리마린)', amount: '130mg' },
+          { name: '비타민B1(티아민)', amount: '1.2mg' },
+          { name: '아연', amount: '8.5mg' }
+        ],
+        intake: '1일 1회, 1회 1포를 충분한 물과 함께 섭취하세요.\n정해진 시간에 드시면 거르지 않고 챙기기 좋습니다.',
+        caution: '임산부·수유부, 어린이는 섭취에 주의하세요.\n의약품 복용 중이거나 알레르기 체질인 분은 전문가와 상담 후 섭취하세요.\n이상사례 발생 시 섭취를 중단하고 전문가와 상담하십시오.',
+        allergy: '대두 함유',
+        reportNo: '20250000000000',
+        reviewNo: ''
+      },
       specs: [
-        { k: '중량', v: '500g × 2팩 (1팩 1인분)' },
-        { k: '보관방법', v: '냉동 보관 (-18℃ 이하)' },
-        { k: '원산지', v: '소고기: 국산 / 무: 국산' },
-        { k: '조리방법', v: '중탕 3분 또는 전자레인지 2분 30초' }
+        { k: '내용량', v: '2g × 30포 (30일분)' },
+        { k: '제품 형태', v: '스틱형 분말' },
+        { k: '보관방법', v: '직사광선을 피해 서늘한 곳에 보관' },
+        { k: '제조원', v: '국내 GMP 인증 제조시설' }
       ],
       reviews: [
-        { star: 5, txt: '자취 3년 만에 제대로 된 국 먹어봤어요. 고기가 진짜 들어있습니다.', who: '김O진 님' },
-        { star: 5, txt: '엄마가 끓여준 맛이랑 비슷해서 재구매했어요.', who: '이O영 님' }
+        { star: 5, txt: '물 없이 털어 넣는 게 편해서 한 달 동안 한 번도 안 거르고 먹었어요.', who: '박O수 님' }
       ],
       shipping: {
         fee: '3,000원 (3만원 이상 무료배송)',
         period: '오후 2시 이전 결제 시 당일 출고',
-        exchange: '냉동식품 특성상 단순 변심 반품은 어렵습니다 (배송 사고는 전액 보상)',
-        contact: '상품 문의 게시판 또는 카카오채널 @몽글푸드'
+        exchange: '미개봉 상품에 한해 수령 후 7일 이내 교환·반품 가능',
+        contact: '상품 문의 게시판 또는 카카오채널'
       }
     });
     fillForm(); render();
-    toast('예시를 채웠습니다. 내용만 바꿔 쓰세요');
+    toast('건강기능식품 예시를 채웠습니다. 내용만 바꿔 쓰세요');
   }
 
   /* ---------------- 시작 ---------------- */
@@ -1328,6 +1722,15 @@ ${body(state, copy)}
     fillForm();
     bindEvents();
     setupImages();
+
+    $('#selClaim').onchange = e => {
+      if (!e.target.value) return;
+      state.hff.claim = e.target.value;
+      $('[data-bind="hff.claim"]').value = e.target.value;
+      e.target.value = '';
+      render();
+      toast('예시 문구를 넣었습니다. 내 제품 표시사항과 같은지 꼭 확인하세요');
+    };
 
     $('#btnSample').onclick = sample;
     $('#btnRecopy').onclick = () => { state.variant = (state.variant || 0) + 1; render(); toast('다른 문구로 바꿨습니다'); };

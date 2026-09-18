@@ -127,4 +127,35 @@ const DETAIL_CSS = `
   font-size:23px; font-weight:800; padding:22px 60px; border-radius:100px;
 }
 .dp-foot{padding:30px 60px; text-align:center; font-size:15px; color:#8B9197;}
+/* ---- 건기식: 기능성 정보 ---- */
+.dp-func .claim{
+  border:2px solid var(--dp-main); border-radius:18px; padding:30px 34px; margin-top:30px; background:var(--dp-tint);
+}
+.dp-func .claim-label{
+  display:inline-block; background:var(--dp-main); color:#fff; font-size:15px; font-weight:800;
+  padding:6px 14px; border-radius:100px; margin-bottom:14px;
+}
+.dp-func .claim-text{font-size:24px; font-weight:800; line-height:1.5; color:#1F2328;}
+.dp-func .claim-sub{font-size:17px; color:#4A5157; margin-top:12px;}
+.dp-func table.ing{width:100%; border-collapse:collapse; margin-top:22px; font-size:18px;}
+.dp-func table.ing th{background:#F2F4F6; font-weight:800; padding:16px; border:1px solid #E4E7EA;}
+.dp-func table.ing td{padding:16px; border:1px solid #E4E7EA; text-align:center;}
+.dp-func table.ing td:first-child{text-align:left; font-weight:700;}
+
+/* ---- 건기식: 섭취방법 ---- */
+.dp-intake .two{display:flex; gap:16px; margin-top:28px;}
+.dp-intake .box{flex:1; background:#F7F8FA; border-radius:16px; padding:28px 30px;}
+.dp-intake .box.care{background:#FFF6F4; border:1px solid #FFD9CF;}
+.dp-intake .box h3{font-size:20px; margin-bottom:12px;}
+.dp-intake .box p{font-size:17px; line-height:1.7;}
+
+/* ---- 건기식: 의무 표시사항 ---- */
+.dp-legal{background:#F2F4F6; padding:44px 60px;}
+.dp-legal .legal-title{font-size:16px; font-weight:800; color:#41474D; margin-bottom:14px;}
+.dp-legal ul{list-style:none; padding:0; margin:0;}
+.dp-legal li{
+  font-size:15px; color:#6B7278; line-height:1.8; padding-left:16px; position:relative;
+}
+.dp-legal li:before{content:'·'; position:absolute; left:4px;}
 `;
+

@@ -138,3 +138,31 @@ input,select,textarea{font-family:inherit; font-size:14px;}
   .panel{width:100%; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line);}
   .stage{width:100%; height:auto;}
 }
+
+/* ===== 광고 문구 위험 검사 ===== */
+.guard{border-bottom:1px solid var(--line); padding:14px 20px 16px; background:#FBFCFD;}
+.guard-head{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.guard-head b{font-size:14px;}
+.guard-sum{margin-left:auto; font-size:12.5px; font-weight:800; padding:4px 10px; border-radius:100px;}
+.guard-sum.ok{background:rgba(0,178,107,.12); color:#00875A;}
+.guard-sum.bad{background:rgba(214,63,69,.12); color:#C0454A;}
+.guard-list{display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;}
+.guard-item{
+  border-radius:8px; padding:9px 11px; font-size:12.5px; line-height:1.55;
+  border-left:3px solid transparent; background:#fff; border:1px solid var(--line);
+}
+.guard-item.ban{border-left-color:#D63F45; background:#FFF6F6;}
+.guard-item.warn{border-left-color:#E8A33D; background:#FFFBF3;}
+.guard-item .w{font-weight:800;}
+.guard-item .w.ban{color:#C0454A;}
+.guard-item .w.warn{color:#B67A1E;}
+.guard-item .where{color:var(--gray);}
+.guard-item .fix{display:block; color:#41474D; margin-top:3px;}
+.guard-empty{font-size:12.5px; color:var(--gray); padding:4px 2px;}
+
+.tag-hff{
+  background:rgba(61,109,255,.12); color:var(--point); font-size:11px; font-weight:800;
+  padding:2px 7px; border-radius:100px; margin-left:4px;
+}
+.field .hint.danger{color:#C0454A;}
+.chip.bad{background:#FFF1F1; border-color:#F4C7C7; color:#C0454A;}

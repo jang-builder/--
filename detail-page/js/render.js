@@ -67,6 +67,51 @@ const RENDER = (() => {
       </section>`;
     },
 
+    /* ---- 건강기능식품 전용 ---- */
+    func(st, c) {
+      const h = st.hff || {};
+      const ing = (h.ingredients || []).filter(i => i.name);
+      if (!h.claim && !ing.length) return '';
+      const rows = ing.map(i => `<tr><td>${esc(i.name)}</td><td>${esc(i.amount || '-')}</td></tr>`).join('');
+      return `<section class="dp-func">
+        <div class="center"><span class="eyebrow">${st.category === 'hff' ? '식약처 인정 기능성' : '원료 정보'}</span></div>
+        <h2 class="center">무엇이 들어있고,\n무엇에 도움이 되는지</h2>
+        ${h.claim ? `<div class="claim">
+          <div class="claim-label">기능성 내용</div>
+          <div class="claim-text">${nl(h.claim)}</div>
+          ${h.claimSub ? `<div class="claim-sub">${nl(h.claimSub)}</div>` : ''}
+        </div>` : ''}
+        ${rows ? `<table class="ing"><thead><tr><th>원료명</th><th>1일 섭취량당 함량</th></tr></thead>
+          <tbody>${rows}</tbody></table>` : ''}
+      </section>`;
+    },
+
+    intake(st) {
+      const h = st.hff || {};
+      if (!h.intake && !h.caution) return '';
+      return `<section class="dp-intake">
+        <h2 class="center">섭취 방법 · 주의사항</h2>
+        <div class="two">
+          ${h.intake ? `<div class="box"><h3>이렇게 드세요</h3><p>${nl(h.intake)}</p></div>` : ''}
+          ${h.caution ? `<div class="box care"><h3>이런 분은 주의하세요</h3><p>${nl(h.caution)}</p></div>` : ''}
+        </div>
+      </section>`;
+    },
+
+    legal(st) {
+      const h = st.hff || {};
+      const notices = (typeof GUARD !== 'undefined' && GUARD.NOTICE[st.category]) || [];
+      if (!notices.length && !h.allergy && !h.reviewNo && !h.reportNo) return '';
+      const lines = notices.slice();
+      if (h.allergy) lines.push(`알레르기 유발 원료: ${h.allergy}`);
+      if (h.reportNo) lines.push(`품목제조신고번호(또는 수입신고번호): ${h.reportNo}`);
+      if (h.reviewNo) lines.push(`심의필 번호: ${h.reviewNo}`);
+      return `<section class="dp-legal">
+        <div class="legal-title">표시사항 · 의무 안내</div>
+        <ul>${lines.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+      </section>`;
+    },
+
     gallery(st) {
       const imgs = (st.images.details || []);
       if (!imgs.length) return '';
@@ -157,13 +202,14 @@ const RENDER = (() => {
     }
   };
 
-  const ORDER = ['hero', 'reco', 'pain', 'benefit', 'gallery', 'compare', 'spec', 'trust', 'review', 'faq', 'ship', 'cta'];
+  const ORDER = ['hero', 'reco', 'pain', 'func', 'benefit', 'gallery', 'intake', 'compare', 'spec', 'trust', 'review', 'faq', 'ship', 'legal', 'cta'];
 
   const LABELS = {
     hero: '1. 첫 화면(후킹)', reco: '2. 이런 분께 추천', pain: '3. 고민 공감',
-    benefit: '4. 핵심 혜택', gallery: '5. 상세 이미지', compare: '6. 비교표',
-    spec: '7. 상품 정보', trust: '8. 신뢰 배지', review: '9. 후기',
-    faq: '10. 자주 묻는 질문', ship: '11. 배송·교환', cta: '12. 마지막 구매 유도'
+    func: '4. 기능성·원료 정보 ★건기식', benefit: '5. 핵심 혜택', gallery: '6. 상세 이미지',
+    intake: '7. 섭취방법·주의사항 ★건기식', compare: '8. 비교표', spec: '9. 상품 정보',
+    trust: '10. 신뢰 배지', review: '11. 후기', faq: '12. 자주 묻는 질문',
+    ship: '13. 배송·교환', legal: '14. 의무 표시사항 ★건기식', cta: '15. 마지막 구매 유도'
   };
 
   /* ---------- 본문 조립 ---------- */

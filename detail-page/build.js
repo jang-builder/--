@@ -23,7 +23,7 @@ html = put(html,
 );
 
 // 2) 외부 JS 태그 → 내용 그대로 삽입
-['js/copywriter.js', 'js/detail-style.js', 'js/render.js', 'js/app.js'].forEach(f => {
+['js/copywriter.js', 'js/health-guard.js', 'js/detail-style.js', 'js/render.js', 'js/app.js'].forEach(f => {
   html = put(html,
     `<script src="${f}"></script>`,
     '<script>\n' + read(f) + '\n</script>'
