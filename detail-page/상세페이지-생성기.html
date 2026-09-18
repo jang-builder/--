@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상세페이지 자동 생성기 | 스마트스토어·쿠팡용</title>
+<!-- 파일 1개 버전: 이 파일만 있으면 어디서든 열립니다. 수정은 detail-page/ 원본에서 하고 node detail-page/build.js 로 다시 만드세요. -->
+<meta name="description" content="상품 정보만 입력하면 판매 문구까지 자동으로 작성되는 860px 상세페이지 생성기">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/* ===== 상세페이지 생성기 UI ===== */
+:root{
+  --bg:#F2F4F6;
+  --panel:#FFFFFF;
+  --line:#E4E7EA;
+  --ink:#1F2328;
+  --gray:#6B7278;
+  --point:#3D6DFF;
+  --point-dark:#2B55D6;
+  --ok:#00B26B;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6; letter-spacing:-0.01em;
+}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:14px;}
+
+/* ---- 상단바 ---- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:#fff; border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:12px; padding:12px 20px; flex-wrap:wrap;
+}
+.topbar h1{font-size:17px; font-weight:800; margin-right:auto; white-space:nowrap;}
+.topbar h1 small{display:block; font-size:12px; font-weight:500; color:var(--gray); letter-spacing:0;}
+.btn{
+  border:1px solid var(--line); background:#fff; color:var(--ink);
+  border-radius:9px; padding:9px 14px; font-size:13.5px; font-weight:700; white-space:nowrap;
+  transition:.15s;
+}
+.btn:hover{border-color:#C9CFD6; background:#FAFBFC;}
+.btn-main{background:var(--point); border-color:var(--point); color:#fff;}
+.btn-main:hover{background:var(--point-dark); border-color:var(--point-dark);}
+.btn-ghost{background:transparent; border-color:transparent; color:var(--gray);}
+.btn-sm{padding:6px 10px; font-size:12.5px;}
+
+/* ---- 레이아웃 ---- */
+.wrap{display:flex; align-items:flex-start; gap:0;}
+.panel{
+  width:420px; flex:0 0 420px; background:var(--panel);
+  border-right:1px solid var(--line); height:calc(100vh - 57px);
+  overflow-y:auto; padding:0 0 60px;
+}
+.stage{flex:1; padding:26px; height:calc(100vh - 57px); overflow-y:auto;}
+
+/* ---- 아코디언 그룹 ---- */
+.group{border-bottom:1px solid var(--line);}
+.group > summary{
+  list-style:none; cursor:pointer; padding:16px 20px;
+  font-size:14.5px; font-weight:800; display:flex; align-items:center; gap:8px;
+}
+.group > summary::-webkit-details-marker{display:none;}
+.group > summary:before{content:'▸'; color:var(--gray); font-size:12px; transition:.15s;}
+.group[open] > summary:before{transform:rotate(90deg);}
+.group > summary:hover{background:#FAFBFC;}
+.group .body{padding:4px 20px 22px;}
+
+/* ---- 폼 ---- */
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12.5px; font-weight:700; color:#41474D; margin-bottom:6px;}
+.field .hint{font-size:11.5px; font-weight:500; color:var(--gray);}
+.field input[type=text], .field input[type=number], .field select, .field textarea{
+  width:100%; border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fff;
+}
+.field textarea{resize:vertical; min-height:62px; line-height:1.55;}
+.field input:focus, .field select:focus, .field textarea:focus{
+  outline:none; border-color:var(--point); box-shadow:0 0 0 3px rgba(61,109,255,.12);
+}
+.row2{display:flex; gap:10px;}
+.row2 > *{flex:1; min-width:0;}
+.color-row{display:flex; align-items:center; gap:10px;}
+.color-row input[type=color]{width:46px; height:38px; border:1px solid var(--line); border-radius:8px; background:#fff; padding:3px;}
+.swatches{display:flex; gap:6px;}
+.swatches button{width:26px; height:26px; border-radius:50%; border:1px solid rgba(0,0,0,.08);}
+
+/* ---- 반복 입력 ---- */
+.rep-item{
+  border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:#FBFCFD;
+}
+.rep-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+.rep-head b{font-size:12.5px; color:#41474D;}
+.rep-del{border:none; background:none; color:#C0454A; font-size:12.5px; font-weight:700;}
+.rep-item input, .rep-item textarea{margin-bottom:6px;}
+.add-btn{
+  width:100%; border:1px dashed #C9CFD6; background:#fff; color:var(--gray);
+  border-radius:10px; padding:11px; font-size:13px; font-weight:700;
+}
+.add-btn:hover{border-color:var(--point); color:var(--point);}
+
+/* ---- 이미지 ---- */
+.drop{
+  border:1px dashed #C9CFD6; border-radius:10px; padding:18px; text-align:center;
+  font-size:13px; color:var(--gray); background:#FBFCFD; cursor:pointer;
+}
+.drop:hover{border-color:var(--point); color:var(--point);}
+.drop.on{border-color:var(--point); background:rgba(61,109,255,.05);}
+.thumbs{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+.thumb{position:relative; width:72px; height:72px; border-radius:8px; overflow:hidden; border:1px solid var(--line);}
+.thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.thumb button{
+  position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%;
+  border:none; background:rgba(0,0,0,.6); color:#fff; font-size:12px; line-height:1;
+}
+
+/* ---- 섹션 토글 ---- */
+.toggles{display:flex; flex-direction:column; gap:2px;}
+.toggles label{
+  display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:8px;
+  font-size:13.5px; font-weight:600; cursor:pointer;
+}
+.toggles label:hover{background:#F7F8FA;}
+.toggles input{width:16px; height:16px; accent-color:var(--point);}
+
+/* ---- 미리보기 무대 ---- */
+.stage-bar{
+  display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:13px; color:var(--gray);
+}
+.stage-bar .chip{
+  background:#fff; border:1px solid var(--line); border-radius:100px; padding:6px 12px;
+  font-weight:700; color:#41474D; font-size:12.5px;
+}
+.viewport{margin:0 auto; width:860px; transform-origin:top center;}
+.viewport-outer{overflow:hidden;}
+.paper{background:#fff; box-shadow:0 6px 30px rgba(31,35,40,.10); border-radius:4px; overflow:hidden;}
+
+/* ---- 토스트 ---- */
+.toast{
+  position:fixed; left:50%; bottom:34px; transform:translateX(-50%) translateY(20px);
+  background:#1F2328; color:#fff; padding:13px 22px; border-radius:100px; font-size:14px; font-weight:700;
+  opacity:0; pointer-events:none; transition:.25s; z-index:200;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+@media (max-width:1100px){
+  .wrap{flex-direction:column;}
+  .panel{width:100%; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line);}
+  .stage{width:100%; height:auto;}
+}
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>상세페이지 자동 생성기
+    <small>스마트스토어 · 쿠팡용 860px / 판매 문구 자동 작성</small>
+  </h1>
+  <button class="btn" id="btnSample">예시로 채우기</button>
+  <button class="btn" id="btnRecopy">🔁 문구 다시 뽑기</button>
+  <button class="btn" id="btnCopy">HTML 복사</button>
+  <button class="btn" id="btnHtml">HTML 저장</button>
+  <button class="btn btn-main" id="btnPng">📷 이미지(PNG)로 저장</button>
+  <button class="btn btn-ghost btn-sm" id="btnReset">초기화</button>
+</div>
+
+<div class="wrap">
+  <!-- ================= 입력 패널 ================= -->
+  <div class="panel" id="panel">
+
+    <details class="group" open>
+      <summary>1. 기본 정보</summary>
+      <div class="body">
+        <div class="row2">
+          <div class="field">
+            <label>업종 / 카테고리</label>
+            <select data-bind="category" id="selCategory"></select>
+          </div>
+          <div class="field">
+            <label>말투 톤</label>
+            <select data-bind="tone" id="selTone"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>브랜드 · 상호</label>
+          <input type="text" data-bind="brand" placeholder="예: 몽글푸드">
+        </div>
+        <div class="field">
+          <label>상품명 <span class="hint">— 손님이 검색할 이름 그대로</span></label>
+          <input type="text" data-bind="name" placeholder="예: 집밥 한상 소고기무국">
+        </div>
+        <div class="field">
+          <label>주요 고객 <span class="hint">— 구체적일수록 문구가 잘 나옵니다</span></label>
+          <input type="text" data-bind="target" placeholder="예: 혼자 사는 30대 직장인">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>정가(원)</label>
+            <input type="number" data-bind="price" placeholder="19800">
+          </div>
+          <div class="field">
+            <label>판매가(원) <span class="hint">— 없으면 비워두기</span></label>
+            <input type="number" data-bind="salePrice" placeholder="14800">
+          </div>
+        </div>
+        <div class="field">
+          <label>메인 컬러</label>
+          <div class="color-row">
+            <input type="color" data-bind="color" id="inpColor" value="#FF5A3C">
+            <div class="swatches" id="swatches"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>마지막 버튼 문구</label>
+          <input type="text" data-bind="ctaText" placeholder="구매하러 가기">
+        </div>
+      </div>
+    </details>
+
+    <details class="group" open>
+      <summary>2. 핵심 특징 (→ 혜택 문구 자동 변환)</summary>
+      <div class="body">
+        <div class="field">
+          <span class="hint">특징 제목만 적으면 판매 문구는 자동으로 붙습니다. 3~5개를 권장해요.</span>
+        </div>
+        <div id="repFeatures"></div>
+        <button class="add-btn" data-add="features">+ 특징 추가</button>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>3. 이미지</summary>
+      <div class="body">
+        <div class="field">
+          <label>메인(대표) 이미지</label>
+          <div class="drop" id="dropMain">클릭하거나 이미지를 여기에 끌어다 놓으세요</div>
+          <div class="thumbs" id="thumbMain"></div>
+        </div>
+        <div class="field">
+          <label>상세 이미지 <span class="hint">— 여러 장 선택 가능 (가로 860px 권장)</span></label>
+          <div class="drop" id="dropDetail">클릭하거나 이미지를 끌어다 놓으세요</div>
+          <div class="thumbs" id="thumbDetail"></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>4. 상품 정보 (스펙 표)</summary>
+      <div class="body">
+        <div id="repSpecs"></div>
+        <button class="add-btn" data-add="specs">+ 항목 추가</button>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>5. 후기</summary>
+      <div class="body">
+        <div class="field"><span class="hint">실제 받은 후기만 넣어 주세요. 지어낸 후기는 법적으로 문제가 됩니다.</span></div>
+        <div id="repReviews"></div>
+        <button class="add-btn" data-add="reviews">+ 후기 추가</button>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>6. 자주 묻는 질문 (직접 추가)</summary>
+      <div class="body">
+        <div class="field"><span class="hint">비워두면 업종별 기본 질문 3개가 자동으로 들어갑니다.</span></div>
+        <div id="repFaq"></div>
+        <button class="add-btn" data-add="faq">+ 질문 추가</button>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>7. 배송 · 교환 안내</summary>
+      <div class="body">
+        <div class="field"><label>배송비</label><input type="text" data-bind="shipping.fee" placeholder="3,000원 (5만원 이상 무료배송)"></div>
+        <div class="field"><label>배송 기간</label><input type="text" data-bind="shipping.period" placeholder="결제 후 영업일 기준 1~3일 이내 출고"></div>
+        <div class="field"><label>교환·반품</label><input type="text" data-bind="shipping.exchange" placeholder="수령 후 7일 이내, 상품 훼손이 없는 경우 가능"></div>
+        <div class="field"><label>문의 방법</label><input type="text" data-bind="shipping.contact" placeholder="상품 문의 게시판 또는 채팅"></div>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>8. 넣을 섹션 고르기</summary>
+      <div class="body">
+        <div class="toggles" id="toggles"></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ================= 미리보기 ================= -->
+  <div class="stage">
+    <div class="stage-bar">
+      <span class="chip">가로 860px 고정</span>
+      <span class="chip" id="chipHeight">높이 계산 중…</span>
+      <span class="chip" id="chipTone">—</span>
+      <span style="margin-left:auto">화면에 맞춰 축소해 보여드립니다 (저장은 원본 크기)</span>
+    </div>
+    <div class="viewport-outer" id="viewportOuter">
+      <div class="viewport" id="viewport">
+        <div class="paper" id="paper"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   copywriter.js
+   상세페이지 판매 문구 자동 작성 엔진 (규칙 기반, 외부 API 없음)
+   입력값(제품명/카테고리/타겟/특징)을 실제 잘 팔리는 상세페이지
+   문장 패턴에 끼워 넣어 카피를 만들어 준다.
+   ============================================================ */
+
+const COPY = (() => {
+
+  /* ---------- 카테고리별 재료 ---------- */
+  const CATEGORY = {
+    food: {
+      label: '음식 · 식품',
+      pains: ['집에서 해 먹자니 손질부터가 일이고', '사 먹자니 가격도, 위생도 신경 쓰이고', '맛있다 싶으면 꼭 자극적이고'],
+      wish: '차려 먹는 수고 없이, 제대로 된 한 끼',
+      trustWords: ['HACCP 인증 시설 생산', '주문 후 당일 포장', '신선 아이스박스 발송'],
+      faq: [
+        ['유통기한은 어떻게 되나요?', '냉동 보관 시 제조일로부터 표기된 기한까지 드실 수 있습니다. 개봉 후에는 가급적 빨리 드시는 걸 권해드려요.'],
+        ['조리는 어렵지 않나요?', '포장을 뜯고 안내된 시간만 데우면 끝입니다. 별도 손질이 필요 없어요.'],
+        ['보관은 어떻게 하나요?', '받으신 즉시 냉동(또는 냉장) 보관해 주세요. 상세 보관법은 포장 뒷면에 적혀 있습니다.']
+      ],
+      recos: ['끼니를 자주 거르거나 대충 때우게 되는 분', '요리할 시간은 없지만 제대로 먹고 싶은 분', '냉동실에 믿고 꺼낼 한 끼를 두고 싶은 분'],
+      unit: '한 팩'
+    },
+    beauty: {
+      label: '화장품 · 뷰티',
+      pains: ['발라도 그때뿐인 속건조', '순한 건 효과가 없고, 효과 있는 건 따갑고', '아침마다 들뜨는 화장'],
+      wish: '자극 없이, 바르는 순간부터 달라지는 피부',
+      trustWords: ['피부 자극 테스트 완료', '국내 제조', '민감성 피부 사용 적합 판정'],
+      faq: [
+        ['민감성 피부도 쓸 수 있나요?', '자극 테스트를 마친 제품이지만, 피부가 예민하시면 귀 뒤나 팔 안쪽에 먼저 테스트해 보시길 권해드립니다.'],
+        ['사용 순서가 어떻게 되나요?', '세안 후 토너 다음 단계에 사용하시면 가장 잘 흡수됩니다.'],
+        ['개봉 후 얼마나 쓸 수 있나요?', '개봉 후 12개월 이내 사용을 권장하며, 직사광선을 피해 서늘한 곳에 보관해 주세요.']
+      ],
+      recos: ['이것저것 써봤지만 만족한 적이 없는 분', '피부가 예민해 순한 제품을 찾는 분', '아침 화장이 잘 먹었으면 하는 분'],
+      unit: '한 통'
+    },
+    fashion: {
+      label: '의류 · 패션잡화',
+      pains: ['사진이랑 실물이 다를까 봐 망설여지고', '한 번 빨면 늘어나는 옷들', '예쁜 건 불편하고, 편한 건 늘어져 보이고'],
+      wish: '아무렇게나 입어도 정돈돼 보이는 핏',
+      trustWords: ['자체 제작', '실측 사이즈 공개', '세탁 테스트 완료'],
+      faq: [
+        ['사이즈는 어떻게 고르나요?', '아래 실측표를 평소 입으시는 옷과 비교해 보세요. 중간이라면 큰 사이즈를 추천드립니다.'],
+        ['세탁은 어떻게 하나요?', '30도 이하 찬물에서 단독 손세탁 또는 세탁망 사용을 권장합니다.'],
+        ['교환·반품이 되나요?', '착용 흔적이 없는 상태라면 수령 후 7일 이내 교환·반품이 가능합니다.']
+      ],
+      recos: ['입을 옷은 많은데 입을 게 없는 분', '한 벌로 오래 입을 옷을 찾는 분', '핏 때문에 온라인 구매가 망설여지던 분'],
+      unit: '한 벌'
+    },
+    living: {
+      label: '생활 · 주방용품',
+      pains: ['싼 걸 샀다가 금방 망가져 다시 사고', '자리만 차지하고 결국 안 쓰게 되고', '청소가 번거로워 점점 손이 안 가고'],
+      wish: '한 번 사두면 오래 쓰는, 손이 자주 가는 물건',
+      trustWords: ['KC 안전 인증', 'A/S 가능', '1년 품질 보증'],
+      faq: [
+        ['설치가 어렵지 않나요?', '별도 공구 없이 설명서대로 끼우기만 하면 됩니다. 보통 5분이면 끝나요.'],
+        ['세척은 어떻게 하나요?', '분리해서 물로 헹군 뒤 말려 주시면 됩니다. 식기세척기 사용 여부는 상세 정보를 확인해 주세요.'],
+        ['부품만 따로 살 수 있나요?', '네, 소모품은 별도 구매가 가능합니다. 문의 남겨 주시면 안내드릴게요.']
+      ],
+      recos: ['싼 걸 샀다가 금방 바꾼 경험이 있는 분', '집안일에 드는 시간을 줄이고 싶은 분', '한 번 사서 오래 쓰고 싶은 분'],
+      unit: '한 세트'
+    },
+    health: {
+      label: '건강 · 반려동물',
+      pains: ['꾸준히 챙겨 먹는 게 제일 어렵고', '성분표를 봐도 뭐가 좋은지 모르겠고', '효과는 모르겠는데 돈은 계속 나가고'],
+      wish: '매일 챙기기 쉬운, 믿을 수 있는 관리 습관',
+      trustWords: ['식약처 신고 완료', '원료 원산지 공개', '무첨가 제조'],
+      faq: [
+        ['언제 먹이면(먹으면) 좋나요?', '하루 1회, 식후에 드시는 걸 권장합니다. 정해진 시간에 드시면 잊지 않고 챙기기 좋아요.'],
+        ['얼마나 먹어야 효과를 보나요?', '개인차가 있지만 최소 4주 이상 꾸준히 섭취하시길 권해드립니다.'],
+        ['다른 제품과 같이 먹어도 되나요?', '일반적으로 병행이 가능하지만, 복용 중인 약이 있다면 전문가와 상담해 주세요.']
+      ],
+      recos: ['챙겨 먹어야지 하면서 매번 놓치는 분', '성분을 꼼꼼히 보고 고르는 분', '가족을 위해 믿을 만한 걸 찾는 분'],
+      unit: '한 박스'
+    },
+    service: {
+      label: '서비스 · 클래스',
+      pains: ['어디에 맡겨야 할지 기준이 없고', '견적을 물어보기부터가 부담스럽고', '막상 맡겨도 진행 상황을 알 수 없고'],
+      wish: '처음부터 끝까지 설명해 주는 곳',
+      trustWords: ['사전 견적 무료', '진행 과정 실시간 공유', '재방문율 기준 운영'],
+      faq: [
+        ['상담만 받아봐도 되나요?', '네, 상담과 견적은 무료입니다. 부담 없이 문의 주세요.'],
+        ['얼마나 걸리나요?', '기본 일정은 아래 안내를 참고해 주세요. 상황에 따라 조정해 드립니다.'],
+        ['예약은 어떻게 하나요?', '문의를 남겨 주시면 순서대로 연락드려 일정을 잡아드립니다.']
+      ],
+      recos: ['어디에 맡겨야 할지 고민 중인 분', '견적부터 편하게 물어보고 싶은 분', '설명을 제대로 들어보고 결정하고 싶은 분'],
+      unit: '1회'
+    },
+    etc: {
+      label: '기타',
+      pains: ['비슷해 보이는 제품이 너무 많고', '무엇을 기준으로 골라야 할지 모르겠고', '잘못 사면 그냥 버리게 되고'],
+      wish: '고민하지 않고 고를 수 있는 기준',
+      trustWords: ['재구매율 기준 상위', '전 제품 검수 후 발송', '교환·반품 안내 명확'],
+      faq: [
+        ['배송은 얼마나 걸리나요?', '영업일 기준 안내된 일정 내 출고됩니다. 주말·공휴일은 제외됩니다.'],
+        ['교환이 가능한가요?', '수령 후 7일 이내, 상품이 훼손되지 않은 상태라면 가능합니다.'],
+        ['대량 구매 할인이 있나요?', '수량에 따라 조정이 가능합니다. 문의 남겨 주세요.']
+      ],
+      recos: ['비슷한 제품이 많아 고르기 어려우신 분', '실패 없이 한 번에 고르고 싶은 분', '오래 쓸 만한 걸 찾는 분'],
+      unit: '한 개'
+    }
+  };
+
+  /* ---------- 톤별 문장 틀 ---------- */
+  const TONE = {
+    trust: {
+      label: '신뢰형',
+      heads: [
+        '{targetI} 다시 찾는 이유,\n{name}',
+        '{name},\n{targetEul} 위해 다시 만들었습니다',
+        '괜히 오래 팔리는 게 아닙니다\n{name}'
+      ],
+      subs: ['{wish}. 그 기준 하나로 만들었습니다.', '과장 없이, 필요한 것만 담았습니다.', '한 번 써보시면 왜 바꾸지 않는지 아시게 됩니다.'],
+      ctas: ['오늘 주문하면 가장 빠르게 받아보실 수 있습니다', '망설이신다면, 하나만 먼저 써보세요', '지금 준비된 수량만 판매합니다']
+    },
+    emotion: {
+      label: '감성형',
+      heads: [
+        '오늘 하루,\n{name} 하나면 충분해요',
+        '{target}에게\n작지만 확실한 변화',
+        '{nameRo}\n달라진 아침을 만나보세요'
+      ],
+      subs: ['{wish}, 그 기분을 담았어요.', '사소한 것 같지만, 매일이 달라집니다.', '써보신 분들이 먼저 알아봐 주셨어요.'],
+      ctas: ['지금 나를 위한 선물 하나', '오늘의 나에게 한 번 써보세요', '기분 좋은 변화, 오늘부터 시작해요']
+    },
+    value: {
+      label: '가성비형',
+      heads: [
+        '이 가격에 이 퀄리티?\n{name}',
+        '{target} 필수템,\n{name} {priceLine}',
+        '더 싸게 파는 곳은 있어도\n이 구성은 없습니다'
+      ],
+      subs: ['{wish}. 가격은 낮추고, 쓸 건 그대로 남겼습니다.', '광고비 대신 품질에 썼습니다.', '한 번 계산해 보시면 답이 나옵니다.'],
+      ctas: ['이 가격은 이번 물량까지입니다', '지금이 가장 저렴할 때입니다', '수량 소진 시 정가로 돌아갑니다']
+    }
+  };
+
+  /* ---------- 유틸 ---------- */
+  const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
+
+  // 받침 유무에 맞춰 조사를 골라준다. josa('소고기무국','을') → '을'
+  const JOSA = { '을': ['을', '를'], '이': ['이', '가'], '은': ['은', '는'], '과': ['과', '와'], '으로': ['으로', '로'] };
+  const DIGIT_BATCHIM = { '0': 1, '1': 1, '3': 1, '6': 1, '7': 1, '8': 1, '2': 0, '4': 0, '5': 0, '9': 0 };
+  function josa(word, kind) {
+    const pair = JOSA[kind] || JOSA['을'];
+    const w = String(word || '').trim();
+    if (!w) return pair[1];
+    const ch = w[w.length - 1];
+    const code = ch.charCodeAt(0);
+    let hasBatchim;
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+      const jong = (code - 0xAC00) % 28;
+      // 'ㄹ' 받침은 '으로/로'에서 받침 없는 것처럼 취급
+      hasBatchim = kind === '으로' ? (jong !== 0 && jong !== 8) : jong !== 0;
+    } else if (DIGIT_BATCHIM[ch] != null) {
+      hasBatchim = !!DIGIT_BATCHIM[ch];
+    } else {
+      return pair[1];   // 영문·기호로 끝나면 받침 없는 형태로
+    }
+    return hasBatchim ? pair[0] : pair[1];
+  }
+  const withJosa = (word, kind) => `${word}${josa(word, kind)}`;
+  const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';
+
+  function fill(tpl, v) {
+    return tpl.replace(/\{(\w+)\}/g, (_, k) => v[k] != null ? v[k] : '');
+  }
+
+  /* ---------- 특징 → 혜택 문장 변환 ---------- */
+  // 사장님이 쓰는 "특징"(사실)을 손님이 느끼는 "혜택"(결과)으로 바꿔준다.
+  const BENEFIT_PATTERN = [
+    '{f}. 처음 구매하시는 분도 실패하지 않는 이유입니다.',
+    '{f}. 번거로운 과정을 줄여, 자연스럽게 손이 자주 갑니다.',
+    '{f}. 다른 제품과 직접 비교해 보셔도 좋습니다.',
+    '{f}. 매일 함께하는 것일수록 이 차이가 크게 느껴집니다.',
+    '{f}. 오래 만족하실 수 있도록 여기에 가장 신경 썼습니다.'
+  ];
+
+  /* ---------- 메인 ---------- */
+  // state: { category, tone, name, brand, target, price, salePrice, features:[{title,desc}], variant }
+  function generate(state) {
+    const cat = CATEGORY[state.category] || CATEGORY.etc;
+    const tone = TONE[state.tone] || TONE.trust;
+    const v = Number(state.variant || 0);
+
+    const price = Number(state.price) || 0;
+    const sale = Number(state.salePrice) || 0;
+    const hasSale = sale > 0 && sale < price;
+    const percent = hasSale ? Math.round((1 - sale / price) * 100) : 0;
+
+    const vars = {
+      name: state.name || '우리 상품',
+      target: state.target || '고객님',
+      wish: cat.wish,
+      unit: cat.unit,
+      priceLine: hasSale ? won(sale) : (price ? won(price) : '')
+    };
+    vars.targetI = withJosa(vars.target, '이');
+    vars.targetEul = withJosa(vars.target, '을');
+    vars.nameRo = withJosa(vars.name, '으로');
+
+    const headRaw = fill(pick(tone.heads, v), vars);
+    const features = (state.features || []).filter(f => f && f.title);
+
+    return {
+      categoryLabel: cat.label,
+      toneLabel: tone.label,
+      headline: headRaw,
+      sub: fill(pick(tone.subs, v + 1), vars),
+      priceInfo: { price, sale, hasSale, percent, priceText: won(price), saleText: won(sale) },
+
+      // 이런 분께 추천
+      recommend: [
+        `${vars.target}${josa(vars.target, '이')}라면 특히 잘 맞습니다`,
+        ...cat.recos
+      ],
+
+      // 문제 공감
+      painTitle: '혹시, 이런 적 없으셨나요?',
+      pains: cat.pains,
+      painClose: `${vars.wish}.\n그래서 ${withJosa(vars.name, '을')} 만들었습니다.`,
+
+      // 핵심 혜택 (특징 → 혜택 변환)
+      benefits: features.map((f, i) => ({
+        no: String(i + 1).padStart(2, '0'),
+        title: f.title,
+        body: f.desc && f.desc.trim()
+          ? f.desc.trim()
+          : fill(pick(BENEFIT_PATTERN, v + i), { f: f.title })
+      })),
+
+      // 신뢰 요소
+      trust: cat.trustWords,
+
+      // 비교표
+      compare: {
+        head: ['비교 항목', '일반 제품', vars.name],
+        rows: features.slice(0, 4).map(f => [f.title, '제품마다 다름', '기본 제공']),
+        note: '※ 위 내용은 자사 기준 비교이며, 제품별로 차이가 있을 수 있습니다.'
+      },
+
+      faq: cat.faq,
+      cta: pick(tone.ctas, v + 2),
+      ctaSub: hasSale
+        ? `정가 ${won(price)} → ${won(sale)} (${percent}% 할인)`
+        : (price ? won(price) : '')
+    };
+  }
+
+  return { generate, CATEGORY, TONE, won, josa };
+})();
+
+</script>
+<script>
+/* ============================================================
+   detail-style.js
+   상세페이지(860px 고정폭) 전용 스타일.
+   내보내기 HTML 안에 그대로 삽입해야 해서 파일이 아닌
+   문자열로 들고 있습니다. (파일 더블클릭 실행 시에도 동작)
+   ============================================================ */
+
+const DETAIL_CSS = `
+.dp{
+  width:860px; margin:0 auto; background:#fff;
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+  color:#1F2328; line-height:1.75; letter-spacing:-0.02em;
+  -webkit-font-smoothing:antialiased;
+}
+.dp *{box-sizing:border-box;}
+.dp img{max-width:100%; display:block;}
+.dp section{padding:80px 60px;}
+.dp .eyebrow{
+  display:inline-block; font-size:15px; font-weight:700; letter-spacing:.08em;
+  color:var(--dp-main); background:var(--dp-tint); padding:8px 16px; border-radius:100px; margin-bottom:20px;
+}
+.dp h2{font-size:38px; font-weight:800; line-height:1.35; margin:0 0 16px; white-space:pre-line;}
+.dp h3{font-size:24px; font-weight:800; margin:0 0 10px;}
+.dp p{margin:0; font-size:19px; color:#4A5157;}
+.dp .center{text-align:center;}
+.dp .divider{height:1px; background:#EAECEF; margin:0 60px;}
+
+/* ---- 1. 후킹 ---- */
+.dp-hero{background:var(--dp-tint); text-align:center; padding:90px 60px 70px;}
+.dp-hero h1{font-size:46px; font-weight:800; line-height:1.3; margin:0 0 18px; white-space:pre-line;}
+.dp-hero .sub{font-size:21px; color:#4A5157;}
+.dp-hero .brand{font-size:16px; font-weight:700; color:var(--dp-main); margin-bottom:14px; letter-spacing:.06em;}
+.dp-hero .price{margin-top:28px; font-size:17px; color:#6B7278;}
+.dp-hero .price b{font-size:34px; color:var(--dp-main); font-weight:800; letter-spacing:-0.03em;}
+.dp-hero .price .before{text-decoration:line-through; margin-right:10px;}
+.dp-hero .price .pct{background:var(--dp-main); color:#fff; border-radius:8px; padding:4px 10px; font-size:17px; font-weight:800; margin-right:10px;}
+.dp-hero .mainimg{margin-top:36px; border-radius:20px; overflow:hidden;}
+
+/* ---- 2. 추천 대상 ---- */
+.dp-reco{background:#fff;}
+.dp-reco ul{list-style:none; padding:0; margin:28px 0 0;}
+.dp-reco li{
+  display:flex; align-items:flex-start; gap:14px; font-size:20px; font-weight:600;
+  padding:20px 26px; background:#F7F8FA; border-radius:14px; margin-bottom:12px;
+}
+.dp-reco li .chk{
+  flex:0 0 28px; height:28px; border-radius:50%; background:var(--dp-main); color:#fff;
+  font-size:16px; display:flex; align-items:center; justify-content:center; margin-top:2px;
+}
+
+/* ---- 3. 문제 공감 ---- */
+.dp-pain{background:#2A2F35; color:#fff; text-align:center;}
+.dp-pain h2{color:#fff;}
+.dp-pain .bubbles{display:flex; flex-direction:column; gap:14px; margin:34px 0;}
+.dp-pain .bubble{
+  background:#3A4048; border-radius:16px; padding:22px 28px; font-size:20px; color:#E8EAEC;
+}
+.dp-pain .close{font-size:23px; font-weight:700; color:#fff; white-space:pre-line; line-height:1.6; margin-top:34px;}
+
+/* ---- 4. 핵심 혜택 ---- */
+.dp-benefit .card{
+  display:flex; gap:26px; align-items:flex-start;
+  padding:32px; border:1px solid #EAECEF; border-radius:18px; margin-bottom:18px;
+}
+.dp-benefit .no{
+  flex:0 0 58px; height:58px; border-radius:16px; background:var(--dp-main); color:#fff;
+  font-size:21px; font-weight:800; display:flex; align-items:center; justify-content:center;
+}
+.dp-benefit .card p{font-size:18px;}
+
+/* ---- 5. 상세 이미지 ---- */
+.dp-gallery{padding:0;}
+.dp-gallery img{width:100%;}
+
+/* ---- 6. 비교표 ---- */
+.dp-compare table{width:100%; border-collapse:collapse; margin-top:28px; font-size:18px;}
+.dp-compare th, .dp-compare td{border:1px solid #E4E7EA; padding:18px 16px; text-align:center;}
+.dp-compare thead th{background:#F2F4F6; font-weight:800; font-size:18px;}
+.dp-compare thead th:last-child{background:var(--dp-main); color:#fff;}
+.dp-compare tbody td:first-child{background:#FAFBFC; font-weight:700; text-align:left;}
+.dp-compare tbody td:last-child{font-weight:800; color:var(--dp-main);}
+.dp-compare .note{font-size:15px; color:#8B9197; margin-top:14px;}
+
+/* ---- 7. 상품 정보 ---- */
+.dp-spec table{width:100%; border-collapse:collapse; margin-top:24px; font-size:18px;}
+.dp-spec th{
+  width:190px; background:#F7F8FA; font-weight:700; text-align:left;
+  padding:18px 22px; border-bottom:1px solid #EAECEF; color:#41474D;
+}
+.dp-spec td{padding:18px 22px; border-bottom:1px solid #EAECEF;}
+
+/* ---- 8. 신뢰 배지 ---- */
+.dp-trust{background:var(--dp-tint); display:flex; gap:16px; justify-content:center; flex-wrap:wrap;}
+.dp-trust .badge{
+  background:#fff; border-radius:14px; padding:22px 26px; font-size:18px; font-weight:700;
+  color:#2A2F35; flex:1; min-width:200px; text-align:center;
+}
+.dp-trust .badge span{display:block; font-size:26px; margin-bottom:8px;}
+
+/* ---- 9. 후기 ---- */
+.dp-review .r{
+  border:1px solid #EAECEF; border-radius:16px; padding:26px 30px; margin-bottom:14px;
+}
+.dp-review .stars{color:#FFB400; font-size:19px; letter-spacing:2px;}
+.dp-review .txt{font-size:19px; font-weight:600; margin:10px 0 8px;}
+.dp-review .who{font-size:16px; color:#8B9197;}
+
+/* ---- 10. FAQ ---- */
+.dp-faq .q{
+  border-bottom:1px solid #EAECEF; padding:26px 4px;
+}
+.dp-faq .q strong{display:block; font-size:20px; font-weight:800; margin-bottom:10px;}
+.dp-faq .q strong:before{content:'Q. '; color:var(--dp-main);}
+.dp-faq .q p:before{content:'A. '; font-weight:800; color:#8B9197;}
+
+/* ---- 11. 배송/교환 ---- */
+.dp-ship .box{background:#F7F8FA; border-radius:16px; padding:30px 34px; margin-top:24px;}
+.dp-ship .row{display:flex; gap:16px; font-size:18px; padding:10px 0;}
+.dp-ship .row b{flex:0 0 120px; color:#41474D;}
+
+/* ---- 12. 마지막 CTA ---- */
+.dp-cta{background:var(--dp-main); color:#fff; text-align:center; padding:80px 60px;}
+.dp-cta h2{color:#fff; font-size:36px;}
+.dp-cta .sub{font-size:21px; color:rgba(255,255,255,.92); margin-top:10px;}
+.dp-cta .btn{
+  display:inline-block; margin-top:32px; background:#fff; color:var(--dp-main);
+  font-size:23px; font-weight:800; padding:22px 60px; border-radius:100px;
+}
+.dp-foot{padding:30px 60px; text-align:center; font-size:15px; color:#8B9197;}
+`;
+
+</script>
+<script>
+/* ============================================================
+   render.js
+   입력값(state) + 자동 문구(copy) → 상세페이지 HTML 조립
+   ============================================================ */
+
+const RENDER = (() => {
+
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  // 줄바꿈을 <br>로 (이스케이프 후 처리)
+  const nl = s => esc(s).replace(/\n/g, '<br>');
+
+  const has = (state, key) => state.sections[key] !== false;
+
+  /* ---------- 섹션별 렌더러 ---------- */
+  const S = {
+    hero(st, c) {
+      const p = c.priceInfo;
+      let price = '';
+      if (p.hasSale) {
+        price = `<div class="price"><span class="pct">${p.percent}%</span>
+          <span class="before">${esc(p.priceText)}</span><b>${esc(p.saleText)}</b></div>`;
+      } else if (p.price) {
+        price = `<div class="price"><b>${esc(p.priceText)}</b></div>`;
+      }
+      const img = st.images.main
+        ? `<div class="mainimg"><img src="${st.images.main}" alt="${esc(st.name)}"></div>` : '';
+      return `<section class="dp-hero">
+        ${st.brand ? `<div class="brand">${esc(st.brand)}</div>` : ''}
+        <h1>${nl(c.headline)}</h1>
+        <div class="sub">${nl(c.sub)}</div>
+        ${price}
+        ${img}
+      </section>`;
+    },
+
+    reco(st, c) {
+      const li = c.recommend.map(t => `<li><span class="chk">✓</span><span>${esc(t)}</span></li>`).join('');
+      return `<section class="dp-reco">
+        <div class="center"><span class="eyebrow">이런 분께 추천합니다</span></div>
+        <h2 class="center">이런 분이라면\n끝까지 읽어보셔도 좋습니다</h2>
+        <ul>${li}</ul>
+      </section>`;
+    },
+
+    pain(st, c) {
+      const b = c.pains.map(t => `<div class="bubble">“${esc(t)}…”</div>`).join('');
+      return `<section class="dp-pain">
+        <h2>${nl(c.painTitle)}</h2>
+        <div class="bubbles">${b}</div>
+        <div class="close">${nl(c.painClose)}</div>
+      </section>`;
+    },
+
+    benefit(st, c) {
+      if (!c.benefits.length) return '';
+      const cards = c.benefits.map(b => `<div class="card">
+          <div class="no">${esc(b.no)}</div>
+          <div><h3>${esc(b.title)}</h3><p>${nl(b.body)}</p></div>
+        </div>`).join('');
+      return `<section class="dp-benefit">
+        <div class="center"><span class="eyebrow">핵심 포인트</span></div>
+        <h2 class="center">${esc(st.name)},\n여기에 가장 신경 썼습니다</h2>
+        <div style="margin-top:34px">${cards}</div>
+      </section>`;
+    },
+
+    gallery(st) {
+      const imgs = (st.images.details || []);
+      if (!imgs.length) return '';
+      return `<section class="dp-gallery">${
+        imgs.map((src, i) => `<img src="${src}" alt="상세 이미지 ${i + 1}">`).join('')
+      }</section>`;
+    },
+
+    compare(st, c) {
+      if (!c.compare.rows.length) return '';
+      const th = c.compare.head.map(h => `<th>${esc(h)}</th>`).join('');
+      const tr = c.compare.rows.map(r => `<tr>${r.map(d => `<td>${esc(d)}</td>`).join('')}</tr>`).join('');
+      return `<section class="dp-compare">
+        <div class="center"><span class="eyebrow">무엇이 다른가요</span></div>
+        <h2 class="center">직접 비교해 보세요</h2>
+        <table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>
+        <div class="note">${esc(c.compare.note)}</div>
+      </section>`;
+    },
+
+    spec(st) {
+      const rows = (st.specs || []).filter(s => s.k && s.v);
+      if (!rows.length) return '';
+      return `<section class="dp-spec">
+        <h2 class="center">상품 정보</h2>
+        <table><tbody>${
+          rows.map(s => `<tr><th>${esc(s.k)}</th><td>${nl(s.v)}</td></tr>`).join('')
+        }</tbody></table>
+      </section>`;
+    },
+
+    trust(st, c) {
+      const icons = ['✔', '★', '◎'];
+      return `<section class="dp-trust">${
+        c.trust.map((t, i) => `<div class="badge"><span>${icons[i % icons.length]}</span>${esc(t)}</div>`).join('')
+      }</section>`;
+    },
+
+    review(st) {
+      const rv = (st.reviews || []).filter(r => r.txt);
+      if (!rv.length) return '';
+      return `<section class="dp-review">
+        <div class="center"><span class="eyebrow">실제 후기</span></div>
+        <h2 class="center">먼저 써보신 분들의 이야기</h2>
+        <div style="margin-top:30px">${
+          rv.map(r => `<div class="r">
+            <div class="stars">${'★'.repeat(Math.max(1, Math.min(5, Number(r.star) || 5)))}</div>
+            <div class="txt">“${esc(r.txt)}”</div>
+            <div class="who">${esc(r.who || '구매자')}</div>
+          </div>`).join('')
+        }</div>
+      </section>`;
+    },
+
+    faq(st, c) {
+      const extra = (st.faq || []).filter(f => f.q && f.a).map(f => [f.q, f.a]);
+      const list = extra.length ? extra.concat(c.faq) : c.faq;
+      return `<section class="dp-faq">
+        <h2 class="center">자주 묻는 질문</h2>
+        <div style="margin-top:24px">${
+          list.map(([q, a]) => `<div class="q"><strong>${esc(q)}</strong><p>${nl(a)}</p></div>`).join('')
+        }</div>
+      </section>`;
+    },
+
+    ship(st) {
+      const s = st.shipping || {};
+      const rows = [
+        ['배송비', s.fee || '3,000원 (5만원 이상 무료배송)'],
+        ['배송 기간', s.period || '결제 후 영업일 기준 1~3일 이내 출고'],
+        ['교환·반품', s.exchange || '수령 후 7일 이내, 상품 훼손이 없는 경우 가능'],
+        ['문의', s.contact || '상품 문의 게시판 또는 채팅으로 남겨 주세요']
+      ];
+      return `<section class="dp-ship">
+        <h2 class="center">배송 · 교환 안내</h2>
+        <div class="box">${
+          rows.map(([k, v]) => `<div class="row"><b>${esc(k)}</b><span>${nl(v)}</span></div>`).join('')
+        }</div>
+      </section>`;
+    },
+
+    cta(st, c) {
+      return `<section class="dp-cta">
+        <h2>${nl(c.cta)}</h2>
+        ${c.ctaSub ? `<div class="sub">${esc(c.ctaSub)}</div>` : ''}
+        <div class="btn">${esc(st.ctaText || '구매하러 가기')}</div>
+      </section>`;
+    }
+  };
+
+  const ORDER = ['hero', 'reco', 'pain', 'benefit', 'gallery', 'compare', 'spec', 'trust', 'review', 'faq', 'ship', 'cta'];
+
+  const LABELS = {
+    hero: '1. 첫 화면(후킹)', reco: '2. 이런 분께 추천', pain: '3. 고민 공감',
+    benefit: '4. 핵심 혜택', gallery: '5. 상세 이미지', compare: '6. 비교표',
+    spec: '7. 상품 정보', trust: '8. 신뢰 배지', review: '9. 후기',
+    faq: '10. 자주 묻는 질문', ship: '11. 배송·교환', cta: '12. 마지막 구매 유도'
+  };
+
+  /* ---------- 본문 조립 ---------- */
+  function body(state, copy) {
+    const inner = ORDER
+      .filter(k => has(state, k))
+      .map(k => S[k](state, copy))
+      .join('\n');
+    const color = state.color || '#FF5A3C';
+    return `<div class="dp" style="--dp-main:${esc(color)}; --dp-tint:${esc(tint(color))}">
+      ${inner}
+      <div class="dp-foot">${esc(state.brand || state.name || '')}</div>
+    </div>`;
+  }
+
+  // 메인 컬러의 옅은 배경색 만들기 (#RRGGBB → 아주 연한 톤)
+  function tint(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return '#FFF3F0';
+    const n = parseInt(m[1], 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const mix = c => Math.round(c + (255 - c) * 0.92);
+    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  }
+
+  /* ---------- 단독 실행 HTML (다운로드용) ---------- */
+  function standalone(state, copy) {
+    return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>${esc(state.name || '상세페이지')}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>body{margin:0;background:#F2F4F6;padding:0;}
+${DETAIL_CSS}</style>
+</head>
+<body>
+${body(state, copy)}
+</body>
+</html>`;
+  }
+
+  return { body, standalone, ORDER, LABELS, esc };
+})();
+
+</script>
+<script>
+/* ============================================================
+   app.js  —  상세페이지 자동 생성기 컨트롤러
+   입력 → 상태(state) → 자동 문구 → 미리보기 → 저장
+   ============================================================ */
+(() => {
+
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const SAVE_KEY = 'dp-generator-state-v1';
+
+  /* ---------------- 상태 ---------------- */
+  const blank = () => ({
+    category: 'food', tone: 'trust',
+    brand: '', name: '', target: '',
+    price: '', salePrice: '',
+    color: '#FF5A3C', ctaText: '구매하러 가기',
+    variant: 0,
+    features: [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }],
+    specs: [{ k: '', v: '' }],
+    reviews: [],
+    faq: [],
+    shipping: { fee: '', period: '', exchange: '', contact: '' },
+    images: { main: '', details: [] },
+    sections: {}
+  });
+
+  let state = blank();
+
+  /* ---------------- 반복 입력 설정 ---------------- */
+  const REPEATERS = {
+    features: {
+      box: '#repFeatures', label: '특징',
+      fields: [
+        { k: 'title', ph: '예: 아이스팩 포장 당일 발송', type: 'text' },
+        { k: 'desc', ph: '설명(비워두면 판매 문구가 자동으로 붙습니다)', type: 'textarea' }
+      ],
+      make: () => ({ title: '', desc: '' })
+    },
+    specs: {
+      box: '#repSpecs', label: '항목',
+      fields: [
+        { k: 'k', ph: '항목명 (예: 중량)', type: 'text' },
+        { k: 'v', ph: '내용 (예: 500g × 2팩)', type: 'text' }
+      ],
+      make: () => ({ k: '', v: '' })
+    },
+    reviews: {
+      box: '#repReviews', label: '후기',
+      fields: [
+        { k: 'star', ph: '별점 (1~5)', type: 'number' },
+        { k: 'txt', ph: '후기 내용', type: 'textarea' },
+        { k: 'who', ph: '작성자 (예: 김O진 님)', type: 'text' }
+      ],
+      make: () => ({ star: 5, txt: '', who: '' })
+    },
+    faq: {
+      box: '#repFaq', label: '질문',
+      fields: [
+        { k: 'q', ph: '질문', type: 'text' },
+        { k: 'a', ph: '답변', type: 'textarea' }
+      ],
+      make: () => ({ q: '', a: '' })
+    }
+  };
+
+  /* ---------------- 값 읽기/쓰기 (a.b 경로 지원) ---------------- */
+  function setPath(obj, path, val) {
+    const keys = path.split('.');
+    let o = obj;
+    for (let i = 0; i < keys.length - 1; i++) o = o[keys[i]] = o[keys[i]] || {};
+    o[keys[keys.length - 1]] = val;
+  }
+  function getPath(obj, path) {
+    return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
+  }
+
+  /* ---------------- 초기 UI 만들기 ---------------- */
+  function buildSelects() {
+    $('#selCategory').innerHTML = Object.entries(COPY.CATEGORY)
+      .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+    $('#selTone').innerHTML = Object.entries(COPY.TONE)
+      .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+    $('#swatches').innerHTML = ['#FF5A3C', '#4FB6A0', '#3D6DFF', '#111827', '#C4568B', '#E8A33D']
+      .map(c => `<button type="button" style="background:${c}" data-color="${c}" title="${c}"></button>`).join('');
+
+    $('#toggles').innerHTML = RENDER.ORDER.map(k =>
+      `<label><input type="checkbox" data-section="${k}" checked><span>${RENDER.LABELS[k]}</span></label>`
+    ).join('');
+  }
+
+  function buildRepeater(name) {
+    const cfg = REPEATERS[name];
+    const list = state[name] || [];
+    $(cfg.box).innerHTML = list.map((item, i) => `
+      <div class="rep-item">
+        <div class="rep-head">
+          <b>${cfg.label} ${i + 1}</b>
+          <button type="button" class="rep-del" data-del="${name}" data-idx="${i}">삭제</button>
+        </div>
+        ${cfg.fields.map(f => f.type === 'textarea'
+          ? `<textarea data-rep="${name}" data-idx="${i}" data-key="${f.k}" placeholder="${f.ph}">${RENDER.esc(item[f.k] || '')}</textarea>`
+          : `<input type="${f.type}" data-rep="${name}" data-idx="${i}" data-key="${f.k}" placeholder="${f.ph}" value="${RENDER.esc(item[f.k] == null ? '' : item[f.k])}">`
+        ).join('')}
+      </div>`).join('');
+  }
+
+  function buildAllRepeaters() { Object.keys(REPEATERS).forEach(buildRepeater); }
+
+  /* ---------------- 폼 ↔ 상태 ---------------- */
+  function fillForm() {
+    $$('[data-bind]').forEach(el => {
+      const val = getPath(state, el.dataset.bind);
+      el.value = val == null ? '' : val;
+    });
+    $$('[data-section]').forEach(el => {
+      el.checked = state.sections[el.dataset.section] !== false;
+    });
+    buildAllRepeaters();
+    drawThumbs();
+  }
+
+  function bindEvents() {
+    // 일반 입력
+    document.addEventListener('input', e => {
+      const el = e.target;
+      if (el.dataset.bind) {
+        setPath(state, el.dataset.bind, el.value);
+        render();
+      } else if (el.dataset.rep) {
+        state[el.dataset.rep][+el.dataset.idx][el.dataset.key] = el.value;
+        render();
+      }
+    });
+    document.addEventListener('change', e => {
+      const el = e.target;
+      if (el.dataset.section) {
+        state.sections[el.dataset.section] = el.checked;
+        render();
+      }
+    });
+    // 버튼들
+    document.addEventListener('click', e => {
+      const t = e.target.closest('[data-add],[data-del],[data-color]');
+      if (!t) return;
+      if (t.dataset.add) {
+        state[t.dataset.add].push(REPEATERS[t.dataset.add].make());
+        buildRepeater(t.dataset.add); render();
+      } else if (t.dataset.del) {
+        state[t.dataset.del].splice(+t.dataset.idx, 1);
+        buildRepeater(t.dataset.del); render();
+      } else if (t.dataset.color) {
+        state.color = t.dataset.color;
+        $('#inpColor').value = t.dataset.color;
+        render();
+      }
+    });
+  }
+
+  /* ---------------- 이미지 ---------------- */
+  function readFiles(files, cb) {
+    Array.from(files).filter(f => f.type.startsWith('image/')).forEach(f => {
+      const r = new FileReader();
+      r.onload = () => cb(r.result);
+      r.readAsDataURL(f);
+    });
+  }
+
+  function setupDrop(dropSel, multiple, onData) {
+    const drop = $(dropSel);
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.multiple = multiple;
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    drop.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => { readFiles(input.files, onData); input.value = ''; });
+    ['dragenter', 'dragover'].forEach(ev =>
+      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('on'); }));
+    ['dragleave', 'drop'].forEach(ev =>
+      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('on'); }));
+    drop.addEventListener('drop', e => readFiles(e.dataTransfer.files, onData));
+  }
+
+  function drawThumbs() {
+    $('#thumbMain').innerHTML = state.images.main
+      ? `<div class="thumb"><img src="${state.images.main}"><button type="button" data-img="main">×</button></div>` : '';
+    $('#thumbDetail').innerHTML = state.images.details
+      .map((src, i) => `<div class="thumb"><img src="${src}"><button type="button" data-img="detail" data-idx="${i}">×</button></div>`).join('');
+  }
+
+  function setupImages() {
+    setupDrop('#dropMain', false, data => { state.images.main = data; drawThumbs(); render(); });
+    setupDrop('#dropDetail', true, data => { state.images.details.push(data); drawThumbs(); render(); });
+    document.addEventListener('click', e => {
+      const b = e.target.closest('[data-img]');
+      if (!b) return;
+      if (b.dataset.img === 'main') state.images.main = '';
+      else state.images.details.splice(+b.dataset.idx, 1);
+      drawThumbs(); render();
+    });
+  }
+
+  /* ---------------- 미리보기 ---------------- */
+  let lastCopy = null;
+
+  function render() {
+    const copy = COPY.generate(state);
+    lastCopy = copy;
+    $('#paper').innerHTML = RENDER.body(state, copy);
+    $('#chipTone').textContent = `${copy.categoryLabel} · ${copy.toneLabel}`;
+    fitViewport();
+    save();
+  }
+
+  function fitViewport() {
+    const outer = $('#viewportOuter');
+    const vp = $('#viewport');
+    const scale = Math.min(1, (outer.clientWidth || 860) / 860);
+    vp.style.transform = `scale(${scale})`;
+    const h = $('#paper').scrollHeight;
+    outer.style.height = (h * scale) + 'px';
+    $('#chipHeight').textContent = `높이 약 ${h.toLocaleString('ko-KR')}px`;
+  }
+
+  /* ---------------- 저장 / 복원 ---------------- */
+  function save() {
+    try {
+      const copy = JSON.parse(JSON.stringify(state));
+      delete copy.images;       // 이미지는 용량이 커서 저장하지 않습니다
+      localStorage.setItem(SAVE_KEY, JSON.stringify(copy));
+    } catch (e) { /* 저장 실패는 무시 */ }
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      state = Object.assign(blank(), saved, { images: { main: '', details: [] } });
+      state.shipping = Object.assign({ fee: '', period: '', exchange: '', contact: '' }, saved.shipping || {});
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ---------------- 내보내기 ---------------- */
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._tm);
+    t._tm = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function fileBase() {
+    return (state.name || '상세페이지').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '상세페이지';
+  }
+
+  function download(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportHtml() {
+    const html = RENDER.standalone(state, lastCopy);
+    download(new Blob([html], { type: 'text/html;charset=utf-8' }), fileBase() + '.html');
+    toast('HTML 파일을 저장했습니다');
+  }
+
+  async function copyHtml() {
+    const html = RENDER.standalone(state, lastCopy);
+    try {
+      await navigator.clipboard.writeText(html);
+      toast('HTML 코드를 복사했습니다');
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = html; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast('HTML 코드를 복사했습니다');
+    }
+  }
+
+  // 이미지 저장 1순위: html2canvas (있으면 글꼴까지 가장 비슷하게 나옵니다)
+  function loadH2C() {
+    if (window.html2canvas) return Promise.resolve();
+    const load = new Promise((ok, no) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload = ok; s.onerror = () => no(new Error('cdn'));
+      document.head.appendChild(s);
+    });
+    const timeout = new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 6000));
+    return Promise.race([load, timeout]);
+  }
+
+  // 이미지 저장 2순위: 인터넷이 안 될 때도 동작하는 내장 방식
+  // (상세페이지를 SVG 안에 통째로 넣어 캔버스에 그립니다)
+  function canvasFromNode(node, width) {
+    const height = node.scrollHeight;
+    const xml = new XMLSerializer().serializeToString(node);
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+      `<foreignObject x="0" y="0" width="${width}" height="${height}">` +
+      `<div xmlns="http://www.w3.org/1999/xhtml"><style>${DETAIL_CSS.replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}</style>${xml}</div>` +
+      `</foreignObject></svg>`;
+    return new Promise((ok, no) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = width; c.height = height;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ffffff'; g.fillRect(0, 0, width, height);
+        g.drawImage(img, 0, 0);
+        ok(c);
+      };
+      img.onerror = () => no(new Error('svg'));
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    });
+  }
+
+  async function exportPng() {
+    const btn = $('#btnPng');
+    const old = btn.textContent;
+    btn.textContent = '이미지 만드는 중…'; btn.disabled = true;
+    const vp = $('#viewport');
+    const prevTransform = vp.style.transform;
+    try {
+      vp.style.transform = 'none';          // 원본 크기로 캡처
+      let canvas;
+      try {
+        await loadH2C();
+        canvas = await html2canvas($('#paper'), {
+          backgroundColor: '#ffffff', scale: 1, useCORS: true, logging: false,
+          width: 860, windowWidth: 860
+        });
+      } catch (e) {
+        canvas = await canvasFromNode($('#paper .dp'), 860);   // 인터넷 없이 저장
+      }
+      vp.style.transform = prevTransform;
+
+      const SLICE = 2400;                   // 한 장이 너무 길면 나눠 저장
+      if (canvas.height <= SLICE) {
+        await saveCanvas(canvas, fileBase() + '.png');
+        toast('이미지 1장을 저장했습니다');
+      } else {
+        const n = Math.ceil(canvas.height / SLICE);
+        for (let i = 0; i < n; i++) {
+          const h = Math.min(SLICE, canvas.height - i * SLICE);
+          const c = document.createElement('canvas');
+          c.width = canvas.width; c.height = h;
+          c.getContext('2d').drawImage(canvas, 0, i * SLICE, canvas.width, h, 0, 0, canvas.width, h);
+          await saveCanvas(c, `${fileBase()}_${String(i + 1).padStart(2, '0')}.png`);
+          await new Promise(r => setTimeout(r, 350));   // 브라우저 다운로드 차단 방지
+        }
+        toast(`이미지 ${n}장으로 나눠 저장했습니다 (순서대로 업로드하세요)`);
+      }
+    } catch (e) {
+      vp.style.transform = prevTransform;
+      toast('이미지 저장에 실패했습니다. 인터넷 연결을 확인하거나 HTML 저장을 이용해 주세요');
+    } finally {
+      btn.textContent = old; btn.disabled = false;
+    }
+  }
+
+  function saveCanvas(canvas, name) {
+    return new Promise(ok => {
+      canvas.toBlob(blob => { download(blob, name); ok(); }, 'image/png');
+    });
+  }
+
+  /* ---------------- 예시 데이터 ---------------- */
+  function sample() {
+    state = Object.assign(blank(), {
+      category: 'food', tone: 'trust',
+      brand: '몽글푸드', name: '집밥 한상 소고기무국',
+      target: '혼자 사는 30대 직장인',
+      price: '19800', salePrice: '14800',
+      color: '#FF5A3C', ctaText: '오늘의 한 끼 주문하기',
+      features: [
+        { title: '국내산 한우 양지 25% 이상', desc: '' },
+        { title: '끓이지 않고 3분 데우기만', desc: '봉지째 뜨거운 물에 3분, 설거지도 냄비 하나 없이 끝납니다.' },
+        { title: '나트륨 30% 낮춘 저염 레시피', desc: '' },
+        { title: '1인분씩 소분 진공 포장', desc: '' }
+      ],
+      specs: [
+        { k: '중량', v: '500g × 2팩 (1팩 1인분)' },
+        { k: '보관방법', v: '냉동 보관 (-18℃ 이하)' },
+        { k: '원산지', v: '소고기: 국산 / 무: 국산' },
+        { k: '조리방법', v: '중탕 3분 또는 전자레인지 2분 30초' }
+      ],
+      reviews: [
+        { star: 5, txt: '자취 3년 만에 제대로 된 국 먹어봤어요. 고기가 진짜 들어있습니다.', who: '김O진 님' },
+        { star: 5, txt: '엄마가 끓여준 맛이랑 비슷해서 재구매했어요.', who: '이O영 님' }
+      ],
+      shipping: {
+        fee: '3,000원 (3만원 이상 무료배송)',
+        period: '오후 2시 이전 결제 시 당일 출고',
+        exchange: '냉동식품 특성상 단순 변심 반품은 어렵습니다 (배송 사고는 전액 보상)',
+        contact: '상품 문의 게시판 또는 카카오채널 @몽글푸드'
+      }
+    });
+    fillForm(); render();
+    toast('예시를 채웠습니다. 내용만 바꿔 쓰세요');
+  }
+
+  /* ---------------- 시작 ---------------- */
+  function init() {
+    // 상세페이지 템플릿 스타일 삽입
+    const st = document.createElement('style');
+    st.textContent = DETAIL_CSS;
+    document.head.appendChild(st);
+
+    buildSelects();
+    if (!load()) state = blank();
+    fillForm();
+    bindEvents();
+    setupImages();
+
+    $('#btnSample').onclick = sample;
+    $('#btnRecopy').onclick = () => { state.variant = (state.variant || 0) + 1; render(); toast('다른 문구로 바꿨습니다'); };
+    $('#btnCopy').onclick = copyHtml;
+    $('#btnHtml').onclick = exportHtml;
+    $('#btnPng').onclick = exportPng;
+    $('#btnReset').onclick = () => {
+      if (!confirm('입력한 내용을 모두 지우고 처음부터 시작할까요?')) return;
+      localStorage.removeItem(SAVE_KEY);
+      state = blank(); fillForm(); render(); toast('초기화했습니다');
+    };
+
+    window.addEventListener('resize', fitViewport);
+    render();
+    if (!state.name) sample();   // 처음 열었을 때 빈 화면 대신 예시를 보여줍니다
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+
+</script>
+</body>
+</html>
